@@ -17,6 +17,24 @@ segs = [d['hook']] + d['points'] + [d['statsLine'], d['cta']]
 words = [max(len(s.split()), 3) for s in segs]
 T = max(adur + 1.0, 18.0)
 durs = [T * w / sum(words) for w in words]
+# Sync scene boundaries to the real pauses in the voiceover (the narration joins segments with ' ... ').
+if aud:
+    try:
+        import re
+        log = subprocess.run(['ffmpeg', '-i', aud, '-af', 'silencedetect=noise=-35dB:d=0.25', '-f', 'null', '-'], capture_output=True, text=True).stderr
+        ss = [float(x) for x in re.findall(r'silence_start: ([\d.]+)', log)]
+        se = [float(x) for x in re.findall(r'silence_end: ([\d.]+)', log)]
+        gaps = [(e - s, (s + e) / 2) for s, e in zip(ss, se) if 0.15 < s < adur - 0.3]
+        need = len(segs) - 1
+        if len(gaps) >= need:
+            mids = sorted(m for _, m in sorted(gaps, reverse=True)[:need])
+            bounds = [0.0] + mids + [T]
+            nd = [bounds[i + 1] - bounds[i] for i in range(len(segs))]
+            if all(x > 0.6 for x in nd):
+                durs = nd
+                print('synced to voiceover pauses')
+    except Exception as e:
+        print('pause sync skipped:', e)
 async def main():
     shutil.rmtree('frames', ignore_errors=True); os.makedirs('frames')
     async with async_playwright() as p:
