@@ -47,7 +47,8 @@ window.setData=o=>{D=o.d;durs=o.durs;T=o.T;let a=0;durs.forEach(x=>{starts.push(
  nPts=D.points.length;const S=[];
  S.push('<div class="chip">THECOPYGRIND3R · DAILY</div><div class="rings"><i id="r1"></i><i id="r2"></i><i id="r3"></i><b></b></div>');
  D.points.forEach((p,i)=>S.push('<div class="stepnum">0'+(i+1)+'</div><div class="steplab">STEP '+(i+1)+' OF '+nPts+'</div><div class="card">'+esc(short(p,9))+'</div><div class="bar"><i id="bar'+i+'"></i></div>'));
- S.push('<div class="chip">REAL NUMBERS · OUR OWN PIPELINE</div><div class="tile"><span class="l">Leads found</span><span class="v" id="v1">0</span></div><div class="tile"><span class="l">Emails sent</span><span class="v" id="v2">0</span></div><div class="tile" style="border-color:var(--cyan)"><span class="l">Replies</span><span class="v cy" id="v3">0</span></div>');
+ const TL=D.tiles||[['Leads found','leads'],['Emails sent','sent'],['Replies','replies']];
+ S.push('<div class="chip">'+esc(D.statsChip||'REAL NUMBERS · OUR OWN PIPELINE')+'</div>'+TL.map((x,j)=>'<div class="tile"'+(j===TL.length-1?' style="border-color:var(--cyan)"':'')+'><span class="l">'+esc(x[0])+'</span><span class="v'+(j===TL.length-1?' cy':'')+'" id="v'+(j+1)+'">0</span></div>').join(''));
  S.push('<div class="chip">YOUR TURN</div><div style="font-size:84px;font-weight:900;line-height:1.05;margin-bottom:60px">Send us your site.</div><span class="btn">thecopygrind3r.pages.dev</span>');
  const st=document.getElementById('stage');st.innerHTML=S.map((h,i)=>'<div class="scene" id="sc'+i+'">'+h+'</div>').join('');
  S.forEach((_,i)=>els.push(document.getElementById('sc'+i)));
@@ -62,7 +63,7 @@ window.setT=t=>{
  els.forEach((e,i)=>{const a=starts[i],b=a+durs[i];const on=t>=a&&t<b+.12;const k=E(R(t,a,a+.3));e.style.opacity=on?Math.min(k,1-R(t,b-.12,b+.12)):0;e.style.transform='scale('+(.92+.08*k)+')'});
  [1,2,3].forEach(n=>{const r=document.getElementById('r'+n);if(!r)return;const p=((t*0.6+n/3)%1);r.style.transform='scale('+(0.35+p*0.75)+')';r.style.opacity=(1-p).toFixed(3)});
  for(let i=0;i<nPts;i++){const b=document.getElementById('bar'+i);if(b)b.style.width=(100*R(t,starts[i+1],starts[i+1]+durs[i+1]))+'%'}
- const si=1+nPts;const st=starts[si];[['v1','leads',0],['v2','sent',.4],['v3','replies',.8]].forEach(([id,k,dl])=>{const p=E(R(t,st+.3+dl,st+1.6+dl));const el=document.getElementById(id);if(el)el.textContent=Math.round((D.stats[k]||0)*p)});
+ const si=1+nPts;const st=starts[si];(D.tiles||[[0,'leads'],[0,'sent'],[0,'replies']]).map((x,j)=>['v'+(j+1),x[1],j*.4]).forEach(([id,k,dl])=>{const p=E(R(t,st+.3+dl,st+1.6+dl));const el=document.getElementById(id);if(el)el.textContent=Math.round((D.stats[k]||0)*p)});
  const ci=chunks.findIndex(c=>t>=c.s&&t<c.e);const cap=document.getElementById('capt');
  if(ci>=0){const c=chunks[ci];if(ci!==lastChunk){cap.innerHTML=c.ws.map(o=>'<span>'+esc(o.w)+'</span>').join(' ');fitCap(cap);lastChunk=ci}
   const sp=cap.querySelectorAll('span');c.ws.forEach((o,j)=>{sp[j].className=t>=o.s?'on':''});
