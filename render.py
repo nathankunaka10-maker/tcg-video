@@ -12,6 +12,22 @@ def get(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'tcg-video'})
     return json.load(urllib.request.urlopen(req, timeout=240))
 
+def ugc_pick():
+    """Random AI clip of Nathan: uses manifest.json (grows weekly), falls back to the seed clips."""
+    import random
+    names = UGC_CLIPS
+    try:
+        m = get(UGC_BASE + 'manifest.json')
+        if isinstance(m, list) and m:
+            names = m
+    except Exception as e:
+        print('manifest unavailable, using seed clips:', e)
+    return random.choice(names)
+
+def use_ugc(p):
+    import random
+    return os.environ.get('UGC', 'on') != 'off' and random.random() < p
+
 def sh(cmd):
     return subprocess.run(cmd, check=True, capture_output=True)
 
@@ -61,7 +77,7 @@ def render_ad(d):
     END = 2.4
     parts = []
     ugc_i = None
-    if len(d['scenes']) >= 3 and os.environ.get('UGC', 'on') != 'off':
+    if len(d['scenes']) >= 3 and use_ugc(float(os.environ.get('UGC_AD_P', '0.6'))):
         ugc_i = 1  # middle scene becomes an AI clip of Nathan (labelled)
     for i, s in enumerate(d['scenes']):
         raw = 'clips/raw%d.mp4' % i
@@ -69,7 +85,7 @@ def render_ad(d):
         if i == ugc_i:
             try:
                 import random
-                urllib.request.urlretrieve(UGC_BASE + random.choice(UGC_CLIPS), raw)
+                urllib.request.urlretrieve(UGC_BASE + ugc_pick(), raw)
                 is_ai = True
             except Exception as e:
                 print('ugc clip failed, using stock:', e)
@@ -140,7 +156,22 @@ def render_daily(d):
     if aud: cmd += ['-i', aud, '-c:a', 'aac', '-b:a', '160k', '-shortest']
     cmd += ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20', '-movflags', '+faststart', 'out/latest.mp4']
     sh(cmd)
-    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud)}, open('out/meta.json', 'w'))
+    ai = False
+    if use_ugc(float(os.environ.get('UGC_DAILY_P', '0.4'))):
+        try:
+            hook = min(durs[0], 5.0)
+            urllib.request.urlretrieve(UGC_BASE + ugc_pick(), 'ugc.mp4')
+            fc = ("[1:v]scale=1080:1170:force_original_aspect_ratio=increase,crop=1080:1170,setsar=1,fps=%d,"
+                  "drawtext=fontfile=%s:text='AI-generated':fontcolor=white@0.85:fontsize=30:x=40:y=40:box=1:boxcolor=black@0.35:boxborderw=10[c];"
+                  "[0:v][c]overlay=0:10:enable='between(t,0,%.2f)'[v]" % (FPS, FONT, hook))
+            sh(['ffmpeg', '-y', '-i', 'out/latest.mp4', '-stream_loop', '-1', '-t', '%.2f' % hook, '-i', 'ugc.mp4',
+                '-filter_complex', fc, '-map', '[v]', '-map', '0:a?', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20',
+                '-c:a', 'copy', '-t', '%.2f' % T, '-movflags', '+faststart', 'out/ugc_mix.mp4'])
+            os.replace('out/ugc_mix.mp4', 'out/latest.mp4'); ai = True
+            print('added AI cutaway on hook')
+        except Exception as e:
+            print('ugc cutaway skipped:', e)
+    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud), 'ai_clip': ai}, open('out/meta.json', 'w'))
     print('rendered', T)
 
 if __name__ == '__main__':
