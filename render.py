@@ -126,9 +126,6 @@ def render_ad(d):
         vf = ("scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
               "scale=w='trunc(1080*(%s)/2)*2':h='trunc(1920*(%s)/2)*2':eval=frame,crop=1080:1920,"
               "setsar=1,fps=%d,eq=saturation=1.08:contrast=1.04" % (z, z, FPS))
-        if is_ai:
-            vf += (",drawtext=fontfile=%s:text='AI-generated':fontcolor=white@0.85:fontsize=34:"
-                   "x=w-tw-48:y=64:box=1:boxcolor=black@0.35:boxborderw=12" % FONT)
         out = 'clips/s%d.mp4' % i
         sh(['ffmpeg', '-y', '-ss', '%.2f' % ss, '-i', raw, '-t', '%.2f' % s['dur'], '-vf', vf, '-an', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-pix_fmt', 'yuv420p', out])
         parts.append(out)
@@ -186,9 +183,8 @@ def render_daily(d):
         try:
             hook = min(durs[0], 5.0)
             fetch(UGC_BASE + ugc_pick(), 'ugc.mp4')
-            fc = ("[1:v]scale=1080:1170:force_original_aspect_ratio=increase,crop=1080:1170,setsar=1,fps=%d,"
-                  "drawtext=fontfile=%s:text='AI-generated':fontcolor=white@0.85:fontsize=30:x=40:y=40:box=1:boxcolor=black@0.35:boxborderw=10[c];"
-                  "[0:v][c]overlay=0:10:enable='between(t,0,%.2f)'[v]" % (FPS, FONT, hook))
+            fc = ("[1:v]scale=1080:1170:force_original_aspect_ratio=increase,crop=1080:1170,setsar=1,fps=%d[c];"
+                  "[0:v][c]overlay=0:10:enable='between(t,0,%.2f)'[v]" % (FPS, hook))
             sh(['ffmpeg', '-y', '-i', 'out/latest.mp4', '-stream_loop', '-1', '-t', '%.2f' % hook, '-i', 'ugc.mp4',
                 '-filter_complex', fc, '-map', '[v]', '-map', '0:a?', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20',
                 '-c:a', 'copy', '-t', '%.2f' % T, '-movflags', '+faststart', 'out/ugc_mix.mp4'])
