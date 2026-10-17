@@ -1,6 +1,15 @@
 name: render-video
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'ad, daily, or empty for auto (Tue/Fri = ad)'
+        required: false
+        default: ''
+      publish:
+        description: 'Push to the video branch (posts automatically). Off = test render only, download from artifacts'
+        type: boolean
+        default: true
   schedule:
     - cron: '0 6 * * *'
 permissions:
@@ -17,7 +26,15 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: pip install playwright && playwright install --with-deps chromium
       - run: python render.py
+        env:
+          MODE: ${{ inputs.mode }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: render-${{ github.run_id }}
+          path: out/
+          if-no-files-found: ignore
       - name: publish
+        if: ${{ github.event_name == 'schedule' || inputs.publish }}
         run: |
           if [ ! -f out/latest.mp4 ]; then echo "nothing to publish"; exit 0; fi
           cd out
