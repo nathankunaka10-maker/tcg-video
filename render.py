@@ -1,5 +1,22 @@
 import asyncio, subprocess, os, json, shutil, base64, urllib.request, datetime, re, sys
 from playwright.async_api import async_playwright
+
+UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'
+def fetch(url, dst, tries=3):
+    import time
+    last = None
+    for k in range(tries):
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': UA, 'Referer': 'https://pixabay.com/', 'Accept': '*/*'})
+            with urllib.request.urlopen(req, timeout=120) as r, open(dst, 'wb') as f:
+                shutil.copyfileobj(r, f)
+            if os.path.getsize(dst) > 10000:
+                return
+            last = Exception('file too small')
+        except Exception as e:
+            last = e
+        time.sleep(2 * (k + 1))
+    raise last
 FEED = 'https://natenathan.duckdns.org/webhook/video-content'
 AD_FEED = 'https://natenathan.duckdns.org/webhook/ad-content'
 FPS = 30
@@ -85,12 +102,20 @@ def render_ad(d):
         if i == ugc_i:
             try:
                 import random
-                urllib.request.urlretrieve(UGC_BASE + ugc_pick(), raw)
+                fetch(UGC_BASE + ugc_pick(), raw)
                 is_ai = True
             except Exception as e:
                 print('ugc clip failed, using stock:', e)
         if not is_ai:
-            urllib.request.urlretrieve(s['clip'], raw)
+            try:
+                fetch(s['clip'], raw)
+            except Exception as e:
+                print('stock clip failed:', e)
+                try:
+                    fetch(UGC_BASE + ugc_pick(), raw); is_ai = True
+                except Exception as e2:
+                    print('ugc fallback failed, using plain background:', e2)
+                    sh(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'color=c=0x15161a:s=1080x1920:r=%d:d=%.2f' % (FPS, s['dur'] + 1), '-c:v', 'libx264', '-pix_fmt', 'yuv420p', raw])
         try:
             src = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', raw]).decode().strip())
         except Exception:
@@ -160,7 +185,7 @@ def render_daily(d):
     if use_ugc(float(os.environ.get('UGC_DAILY_P', '0.4'))):
         try:
             hook = min(durs[0], 5.0)
-            urllib.request.urlretrieve(UGC_BASE + ugc_pick(), 'ugc.mp4')
+            fetch(UGC_BASE + ugc_pick(), 'ugc.mp4')
             fc = ("[1:v]scale=1080:1170:force_original_aspect_ratio=increase,crop=1080:1170,setsar=1,fps=%d,"
                   "drawtext=fontfile=%s:text='AI-generated':fontcolor=white@0.85:fontsize=30:x=40:y=40:box=1:boxcolor=black@0.35:boxborderw=10[c];"
                   "[0:v][c]overlay=0:10:enable='between(t,0,%.2f)'[v]" % (FPS, FONT, hook))
