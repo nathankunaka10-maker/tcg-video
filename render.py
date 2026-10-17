@@ -4,6 +4,9 @@ FEED = 'https://natenathan.duckdns.org/webhook/video-content'
 AD_FEED = 'https://natenathan.duckdns.org/webhook/ad-content'
 FPS = 30
 AD_DAYS = (1, 4)  # Tuesday, Friday (UTC weekday)
+UGC_BASE = 'https://raw.githubusercontent.com/nathankunaka10-maker/tcg-video/main/assets/ugc/'
+UGC_CLIPS = ['clip1.mp4', 'bank_typing.mp4', 'bank_phone.mp4']
+FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
 
 def get(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'tcg-video'})
@@ -57,9 +60,21 @@ def render_ad(d):
     os.makedirs('clips', exist_ok=True); os.makedirs('out', exist_ok=True)
     END = 2.4
     parts = []
+    ugc_i = None
+    if len(d['scenes']) >= 3 and os.environ.get('UGC', 'on') != 'off':
+        ugc_i = 1  # middle scene becomes an AI clip of Nathan (labelled)
     for i, s in enumerate(d['scenes']):
         raw = 'clips/raw%d.mp4' % i
-        urllib.request.urlretrieve(s['clip'], raw)
+        is_ai = False
+        if i == ugc_i:
+            try:
+                import random
+                urllib.request.urlretrieve(UGC_BASE + random.choice(UGC_CLIPS), raw)
+                is_ai = True
+            except Exception as e:
+                print('ugc clip failed, using stock:', e)
+        if not is_ai:
+            urllib.request.urlretrieve(s['clip'], raw)
         try:
             src = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', raw]).decode().strip())
         except Exception:
@@ -70,6 +85,9 @@ def render_ad(d):
         vf = ("scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
               "scale=w='trunc(1080*(%s)/2)*2':h='trunc(1920*(%s)/2)*2':eval=frame,crop=1080:1920,"
               "setsar=1,fps=%d,eq=saturation=1.08:contrast=1.04" % (z, z, FPS))
+        if is_ai:
+            vf += (",drawtext=fontfile=%s:text='AI-generated':fontcolor=white@0.85:fontsize=34:"
+                   "x=48:y=64:box=1:boxcolor=black@0.35:boxborderw=12" % FONT)
         out = 'clips/s%d.mp4' % i
         sh(['ffmpeg', '-y', '-ss', '%.2f' % ss, '-i', raw, '-t', '%.2f' % s['dur'], '-vf', vf, '-an', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-pix_fmt', 'yuv420p', out])
         parts.append(out)
