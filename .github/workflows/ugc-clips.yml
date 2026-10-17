@@ -1,0 +1,30 @@
+name: ugc-clips
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 3 * * 0,3'
+permissions:
+  contents: write
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pip install gradio_client
+      - run: python ugc_gen.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      - name: commit clips
+        run: |
+          git config user.name tcg
+          git config user.email tcg@users.noreply.github.com
+          git add assets/ugc
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -qm "ugc clips $(date -u +%F)"
+          git pull -q --rebase
+          git push
