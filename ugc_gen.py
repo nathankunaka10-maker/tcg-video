@@ -45,6 +45,10 @@ for i, p in enumerate(prompts[:MAX_NEW]):
         dur = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', os.path.join(OUT, name)]).decode().strip())
         if dur < 2.0:
             os.remove(os.path.join(OUT, name)); continue
+        # trim the last 0.5 s: dissolve/ghost artefacts show up at the tail
+        tmp = os.path.join(OUT, 'tmp_' + name)
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', os.path.join(OUT, name), '-t', '%.2f' % (dur - 0.5), '-c:v', 'libx264', '-crf', '20', '-pix_fmt', 'yuv420p', '-an', tmp], check=True)
+        os.replace(tmp, os.path.join(OUT, name))
         manifest.append(name); made += 1; print('ok', name, dur, flush=True)
     except Exception as e:
         print('stopped:', str(e)[:200]); 
