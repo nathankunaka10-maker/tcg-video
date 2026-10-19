@@ -1,0 +1,10 @@
+Source: YouTube Studio Audio Library, licence "Attribution not required", downloaded 2026-10-19 by the channel owner.
+Files trimmed to their strongest 60 seconds for short videos.
+
+a_stroll.mp3 <- A Stroll - The Grey Room _ Density & Time.mp3 (bpm~76, starts at 12.7s of original)
+after_sunset.mp3 <- After Sunset - Alex Jones _ Xander Jones.mp3 (bpm~89, starts at 26.0s of original)
+comin_wit_it.mp3 <- Comin Wit It - Anno Domini Beats.mp3 (bpm~99, starts at 2.4s of original)
+intergalactic.mp3 <- Intergalactic - Alex Jones _ Xander Jones.mp3 (bpm~81, starts at 10.1s of original)
+locked_in.mp3 <- Locked In - Anno Domini Beats.mp3 (bpm~161, starts at 10.9s of original)
+survival_mode.mp3 <- Survival Mode - Blue Deer Studio.mp3 (bpm~144, starts at 2.4s of original)
+vibe_check.mp3 <- Vibe Check - Blue Deer Studio.mp3 (bpm~117, starts at 15.3s of original)
