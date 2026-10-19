@@ -74,6 +74,15 @@ def music_bed(seconds, out_wav):
     sh(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'aevalsrc=%s:s=44100:d=%.2f' % (expr.replace(',', '\\,'), seconds),
         '-af', 'lowpass=f=5000,afade=t=in:d=0.4,afade=t=out:st=%.2f:d=1.2,volume=0.6' % max(seconds - 1.2, 0), out_wav])
 
+def pick_music(T, out_wav):
+    import glob as _g, random as _rr
+    bank = sorted(_g.glob('assets/music/*.mp3') + _g.glob('assets/music/*.m4a') + _g.glob('assets/music/*.wav'))
+    if bank:
+        trk = _rr.choice(bank); print('music track:', trk)
+        sh(['ffmpeg', '-y', '-stream_loop', '-1', '-i', trk, '-t', '%.2f' % T, '-af', 'afade=t=in:d=0.2,afade=t=out:st=%.2f:d=1.0,volume=0.8' % max(T - 1.0, 0), '-ar', '44100', out_wav])
+    else:
+        music_bed(T, out_wav)
+
 async def snap(template, data, T, transparent):
     shutil.rmtree('frames', ignore_errors=True); os.makedirs('frames')
     async with async_playwright() as p:
@@ -135,7 +144,7 @@ def render_ad(d):
     sh(['ffmpeg', '-y', '-f', 'concat', '-safe', '0', '-i', 'clips/list.txt', '-c', 'copy', 'base.mp4'])
     T = sum(s['dur'] for s in d['scenes']) + END
     asyncio.run(snap('ad.html', d, T, True))
-    music_bed(T, 'music.wav')
+    pick_music(T, 'music.wav')
     sh(['ffmpeg', '-y', '-i', 'base.mp4', '-framerate', str(FPS), '-i', 'frames/f%04d.png', '-i', 'music.wav',
         '-filter_complex', '[0:v][1:v]overlay=0:0:shortest=1[v]', '-map', '[v]', '-map', '2:a',
         '-c:v', 'libx264', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', 'out/latest.mp4'])
@@ -190,14 +199,8 @@ def render_daily(d):
         shutil.copy(hb, 'hookbg.jpg'); d['hook_bg'] = 'hookbg.jpg'; print('using AI hook background')
     print('styles:', d['hookStyle'], d['pointStyle'])
     if not aud:
-        import glob as _g, random as _rr
-        bank = sorted(_g.glob('assets/music/*.mp3') + _g.glob('assets/music/*.m4a') + _g.glob('assets/music/*.wav'))
         try:
-            if bank:
-                trk = _rr.choice(bank); print('music track:', trk)
-                sh(['ffmpeg', '-y', '-stream_loop', '-1', '-i', trk, '-t', '%.2f' % T, '-af', 'afade=t=in:d=0.3,afade=t=out:st=%.2f:d=1.0,volume=0.8' % max(T - 1.0, 0), '-ar', '44100', 'music.wav'])
-            else:
-                music_bed(T, 'music.wav')
+            pick_music(T, 'music.wav')
             aud = 'music.wav'
         except Exception as e:
             print('music failed:', e)
