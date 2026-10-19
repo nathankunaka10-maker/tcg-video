@@ -83,6 +83,19 @@ def pick_music(T, out_wav):
     else:
         music_bed(T, out_wav)
 
+def add_whooshes(music_wav, starts, T, out_wav):
+    """Subtle transition whoosh (filtered noise sweep) at each scene change, mixed under the music."""
+    sh(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'anoisesrc=d=0.45:c=pink:a=0.6', '-af',
+        'highpass=f=700,lowpass=f=6000,afade=t=in:d=0.18,afade=t=out:st=0.2:d=0.25,volume=0.55', '-ar', '44100', '-ac', '2', 'whoosh.wav'])
+    pts = [x for x in starts[1:] if 0.3 < x < T - 0.5]
+    if not pts:
+        os.replace(music_wav, out_wav); return
+    ins = ['-i', music_wav]
+    for _ in pts: ins += ['-i', 'whoosh.wav']
+    fc = ''.join('[%d]adelay=%d|%d[w%d];' % (i + 1, int(max(0, x - 0.2) * 1000), int(max(0, x - 0.2) * 1000), i) for i, x in enumerate(pts))
+    fc += '[0]' + ''.join('[w%d]' % i for i in range(len(pts))) + 'amix=inputs=%d:normalize=0:duration=first[a]' % (len(pts) + 1)
+    sh(['ffmpeg', '-y'] + ins + ['-filter_complex', fc, '-map', '[a]', out_wav])
+
 async def snap(template, data, T, transparent):
     shutil.rmtree('frames', ignore_errors=True); os.makedirs('frames')
     async with async_playwright() as p:
@@ -200,7 +213,12 @@ def render_daily(d):
     print('styles:', d['hookStyle'], d['pointStyle'])
     if not aud:
         try:
-            pick_music(T, 'music.wav')
+            pick_music(T, 'music_raw.wav')
+            st0 = [sum(durs[:i]) for i in range(len(durs))]
+            try:
+                add_whooshes('music_raw.wav', st0, T, 'music.wav')
+            except Exception as e:
+                print('whoosh skipped:', e); os.replace('music_raw.wav', 'music.wav')
             aud = 'music.wav'
         except Exception as e:
             print('music failed:', e)
