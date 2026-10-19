@@ -146,17 +146,20 @@ def render_daily(d):
     os.makedirs('out', exist_ok=True)
     aud = None; adur = 0
     segs = [d['hook']] + d['points'] + ([d['statsLine']] if d.get('statsLine') else []) + [d['cta']]
-    if d.get('audio_b64'):
+    narrate = os.environ.get('NARRATION', 'off') == 'on'
+    if not narrate:
+        print('narration off: text + music')
+    elif d.get('audio_b64'):
         open('narr.pcm', 'wb').write(base64.b64decode(d['audio_b64']))
         sh(['ffmpeg', '-y', '-f', 's16le', '-ar', '24000', '-ac', '1', '-i', 'narr.pcm', 'narr.wav'])
         aud = 'narr.wav'
-    elif edge_tts(' ... '.join(segs), 'narr.wav'):
+    elif narrate and edge_tts(' ... '.join(segs), 'narr.wav'):
         aud = 'narr.wav'
         print('used Edge TTS backup voice')
     if aud:
         adur = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', aud]).decode().strip())
     words = [max(len(s.split()), 3) for s in segs]
-    T = max(adur + 1.0, 18.0)
+    T = max(adur + 1.0, 18.0) if aud else min(max(16.0, sum(words) * 0.34 + len(segs) * 0.7), 42.0)
     durs = [T * w / sum(words) for w in words]
     if aud:
         try:
@@ -186,6 +189,18 @@ def render_daily(d):
     if os.path.exists(hb):
         shutil.copy(hb, 'hookbg.jpg'); d['hook_bg'] = 'hookbg.jpg'; print('using AI hook background')
     print('styles:', d['hookStyle'], d['pointStyle'])
+    if not aud:
+        import glob as _g, random as _rr
+        bank = sorted(_g.glob('assets/music/*.mp3') + _g.glob('assets/music/*.m4a') + _g.glob('assets/music/*.wav'))
+        try:
+            if bank:
+                trk = _rr.choice(bank); print('music track:', trk)
+                sh(['ffmpeg', '-y', '-stream_loop', '-1', '-i', trk, '-t', '%.2f' % T, '-af', 'afade=t=in:d=0.3,afade=t=out:st=%.2f:d=1.0,volume=0.8' % max(T - 1.0, 0), '-ar', '44100', 'music.wav'])
+            else:
+                music_bed(T, 'music.wav')
+            aud = 'music.wav'
+        except Exception as e:
+            print('music failed:', e)
     asyncio.run(snap('template.html', {'d': d, 'durs': durs, 'T': T}, T, False))
     cmd = ['ffmpeg', '-y', '-framerate', str(FPS), '-i', 'frames/f%04d.jpg']
     if aud: cmd += ['-i', aud, '-c:a', 'aac', '-b:a', '160k', '-shortest']
@@ -205,7 +220,7 @@ def render_daily(d):
             print('added AI cutaway on hook')
         except Exception as e:
             print('ugc cutaway skipped:', e)
-    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud), 'ai_clip': ai, 'hook_style': d.get('hookStyle'), 'point_style': d.get('pointStyle'), 'hook_bg': bool(d.get('hook_bg'))}, open('out/meta.json', 'w'))
+    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud) and aud != 'music.wav', 'ai_clip': ai, 'hook_style': d.get('hookStyle'), 'point_style': d.get('pointStyle'), 'hook_bg': bool(d.get('hook_bg'))}, open('out/meta.json', 'w'))
     print('rendered', T)
 
 if __name__ == '__main__':
