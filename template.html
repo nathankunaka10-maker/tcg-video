@@ -24,15 +24,28 @@ html,body{width:1080px;height:1920px;background:#0b1220;color:#fff;font-family:I
 #capt span.on{color:var(--cy2)}
 .wm{position:absolute;left:0;right:0;bottom:90px;text-align:center;font-size:34px;font-weight:800;color:var(--mut)}.wm b{color:var(--cyan)}
 .line{position:absolute;left:0;top:0;height:10px;background:var(--cyan)}
+.kin{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden}
+.burst{position:absolute;width:980px;height:980px;left:50%;top:52%;margin:-490px 0 0 -490px;background:#ff3b5c;opacity:.95}
+.kchip{position:relative;z-index:2;font-size:30px;font-weight:900;letter-spacing:.22em;color:#0b1220;background:#fff;padding:12px 26px;margin-bottom:34px}
+.kwords{position:relative;z-index:2;text-align:center;line-height:.98}
+.kline{display:table;margin:0 auto;white-space:nowrap}
+.kw{display:inline-block;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;margin:6px 12px;will-change:transform}
+.kw.inv{background:#fff;color:#0b1220;padding:0 22px}
+.kw.out{color:transparent;-webkit-text-stroke:5px #fff}
+.kw.cy{color:var(--cy2)}
+.wipe{position:absolute;inset:-10px;background:#fff;z-index:5}
+#hbg{position:absolute;left:0;right:0;top:0;height:1920px;background-size:cover;background-position:center;opacity:0}
+#hbg:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,18,32,.35),rgba(11,18,32,.75) 55%,rgba(11,18,32,.95))}
+
 </style></head><body>
-<div id="grid"></div><div id="glow"></div><div class="line" id="pb"></div>
+<div id="grid"></div><div id="glow"></div><div id="hbg"></div><div class="line" id="pb"></div>
 <div id="stage"></div>
 <div id="cap"><div id="capt"></div></div>
 <div class="wm">the<b>copygrind3r</b></div>
 <script>
 const E=x=>1-Math.pow(1-Math.min(Math.max(x,0),1),3),R=(t,a,b)=>Math.min(Math.max((t-a)/(b-a),0),1);
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-let D,durs,T,starts=[],els=[],chunks=[],nPts=0;
+let D,durs,T,starts=[],els=[],chunks=[],nPts=0,kinN=[];
 function short(s,n){const w=String(s).split(/\s+/);return w.length<=n?s:w.slice(0,n).join(' ')+'…'}
 function buildChunks(text,a,dur){
  const words=String(text).replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
@@ -45,13 +58,25 @@ function buildChunks(text,a,dur){
 }
 window.setData=o=>{D=o.d;durs=o.durs;T=o.T;let a=0;durs.forEach(x=>{starts.push(a);a+=x});
  nPts=D.points.length;const S=[];
+ if(D.hook_bg){const hb=document.getElementById('hbg');hb.style.backgroundImage='url('+D.hook_bg+')'}
+ if(D.kinetic){
+  const kin=(txt,i,chip)=>{const ws=String(txt).replace(/[^\w'?!%€$&\- ]/g,' ').split(/\s+/).filter(Boolean).slice(0,i===0?8:7);
+   const lines=[];for(let j=0;j<ws.length;j+=2)lines.push(ws.slice(j,j+2));let n=0;
+   const sty=['','inv','cy','out','','inv'];
+   const html=lines.map(l=>'<span class="kline">'+l.map(w=>{const c=sty[(n+i)%sty.length];const sz=Math.max(92,Math.min(190,Math.round(1500/Math.max(4,w.length*1.0+3))));return '<span class="kw '+c+'" data-k="'+(n++)+'" style="font-size:'+sz+'px">'+esc(w)+'</span>'}).join('')+'</span>').join('');
+   kinN.push(n);return '<div class="kin"><div class="burst" id="bu'+i+'" style="background:'+(i===0?'#ff3b5c':'var(--cyan)')+'"></div>'+(chip?'<div class="kchip">'+chip+'</div>':'')+'<div class="kwords" id="kw'+i+'">'+html+'</div><div class="wipe" id="wp'+i+'"></div></div>'};
+  S.push(kin(D.hook,0,''));
+  D.points.forEach((p,i)=>S.push(kin(p,i+1,'STEP '+(i+1)+' / '+nPts)));
+ } else {
  S.push('<div class="chip">THECOPYGRIND3R · DAILY</div><div class="rings"><i id="r1"></i><i id="r2"></i><i id="r3"></i><b></b></div>');
  D.points.forEach((p,i)=>S.push('<div class="stepnum">0'+(i+1)+'</div><div class="steplab">STEP '+(i+1)+' OF '+nPts+'</div><div class="card">'+esc(short(p,9))+'</div><div class="bar"><i id="bar'+i+'"></i></div>'));
+ }
  const TL=D.tiles||[['Leads found','leads'],['Emails sent','sent'],['Replies','replies']];
  S.push('<div class="chip">'+esc(D.statsChip||'REAL NUMBERS · OUR OWN PIPELINE')+'</div>'+TL.map((x,j)=>'<div class="tile"'+(j===TL.length-1?' style="border-color:var(--cyan)"':'')+'><span class="l">'+esc(x[0])+'</span><span class="v'+(j===TL.length-1?' cy':'')+'" id="v'+(j+1)+'">0</span></div>').join(''));
  S.push('<div class="chip">YOUR TURN</div><div style="font-size:84px;font-weight:900;line-height:1.05;margin-bottom:60px">Send us your site.</div><span class="btn">thecopygrind3r.pages.dev</span>');
  const st=document.getElementById('stage');st.innerHTML=S.map((h,i)=>'<div class="scene" id="sc'+i+'">'+h+'</div>').join('');
  S.forEach((_,i)=>els.push(document.getElementById('sc'+i)));
+ document.querySelectorAll('.kwords').forEach(kw=>{kw.parentNode.parentNode.style.opacity=1;kw.querySelectorAll('.kline').forEach(l=>{let g=0;while(l.getBoundingClientRect().width>940&&g++<40){l.querySelectorAll('.kw').forEach(w=>{w.style.fontSize=(parseFloat(w.style.fontSize)*0.93)+'px'})}});let g2=0;while(kw.scrollHeight>820&&g2++<30){kw.querySelectorAll('.kw').forEach(w=>{w.style.fontSize=(parseFloat(w.style.fontSize)*0.94)+'px'})}kw.parentNode.parentNode.style.opacity=0});
  const segs=[D.hook,...D.points,D.statsLine,D.cta];
  segs.forEach((s,i)=>buildChunks(s,starts[i],durs[i]));
 };
@@ -69,6 +94,19 @@ window.setT=t=>{
   const sp=cap.querySelectorAll('span');c.ws.forEach((o,j)=>{sp[j].className=t>=o.s?'on':''});
   const k=E(R(t,c.s,c.s+.12));cap.style.transform='scale('+(0.85+0.15*k)+')';cap.style.opacity=k}
  else{cap.style.opacity=0}
+ const hb=document.getElementById('hbg');if(D.hook_bg){const b0=durs[0];hb.style.opacity=(t<b0+.15?1-R(t,b0-.1,b0+.15):0);hb.style.transform='scale('+(1.08-0.08*R(t,0,b0))+')'}
+ if(D.kinetic){let shake=0;
+  for(let i=0;i<=nPts;i++){const a=starts[i],dur=durs[i],lt=t-a;if(lt<-.1||lt>dur+.2)continue;
+   const n=kinN[i]||1;const gap=Math.min(.24,(dur*.55)/n);let last=-9;
+   document.querySelectorAll('#kw'+i+' .kw').forEach(sp=>{const j=+sp.dataset.k;const s0=.18+j*gap;if(lt>=s0)last=Math.max(last,s0);const k=E(R(lt,s0,s0+.17));
+    sp.style.opacity=k;sp.style.transform='scale('+(2.3-1.3*k)+') rotate('+((1-k)*(j%2?6:-6))+'deg)';sp.style.filter='blur('+((1-k)*10).toFixed(1)+'px)'});
+   const pulse=Math.exp(-Math.max(0,lt-last)*7);shake=Math.max(shake,pulse);
+   const bu=document.getElementById('bu'+i);if(bu){const N=14,ri=.55+.25*Math.sin(lt*3.2+i),pts=[];for(let q=0;q<N*2;q++){const ang=q*Math.PI/N+lt*.35;const r=(q%2?ri:1)*50;pts.push((50+r*Math.cos(ang)).toFixed(2)+'% '+(50+r*Math.sin(ang)).toFixed(2)+'%')}
+    bu.style.clipPath='polygon('+pts.join(',')+')';const sc=E(R(lt,0,.25))*(0.78+0.12*pulse);bu.style.transform='scale('+sc+')';bu.style.opacity=(i===0&&D.hook_bg?.85:.95)}
+   const wp=document.getElementById('wp'+i);if(wp){const w=R(lt,0,.28);wp.style.transform='translateX('+(w*220-110)+'%) skewX(-12deg)';wp.style.opacity=w>0&&w<1?1:0}
+  }
+  const st=document.getElementById('stage');st.style.transform='translate('+(Math.sin(t*90)*14*shake).toFixed(1)+'px,'+(Math.cos(t*77)*10*shake).toFixed(1)+'px)';
+ }
  document.getElementById('pb').style.width=(100*t/T)+'%';
 };
 </script></body></html>
