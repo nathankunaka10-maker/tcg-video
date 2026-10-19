@@ -24,6 +24,11 @@ html,body{width:1080px;height:1920px;background:#0b1220;color:#fff;font-family:I
 #capt span.on{color:var(--cy2)}
 .wm{position:absolute;left:0;right:0;bottom:90px;text-align:center;font-size:34px;font-weight:800;color:var(--mut)}.wm b{color:var(--cyan)}
 .line{position:absolute;left:0;top:0;height:10px;background:var(--cyan)}
+.ntf{width:900px;background:rgba(245,247,250,.96);color:#0b1220;border-radius:42px;padding:34px 40px;text-align:left;box-shadow:0 30px 90px rgba(0,0,0,.5)}
+.ntop{display:flex;align-items:center;gap:18px;font-size:30px;font-weight:800;color:#4b5563;margin-bottom:14px}.nic{display:inline-flex;width:58px;height:58px;border-radius:14px;background:var(--cyan);color:#fff;align-items:center;justify-content:center;font-size:32px}.napp{letter-spacing:.12em}.ntm{margin-left:auto;font-weight:600}
+.nmsg{font-size:56px;font-weight:800;line-height:1.15}
+.ncount{margin-top:46px;font-size:40px;font-weight:800;color:#ff3b5c;letter-spacing:.06em;text-transform:uppercase;opacity:0}.ncount b{font-size:64px}
+.mtr{width:920px;margin-bottom:40px}.mlab{font-size:30px;font-weight:900;letter-spacing:.16em;color:var(--cy2);margin-bottom:14px;text-align:left}.mbar{height:26px;background:#1f2937;border-radius:99px;overflow:hidden;border:2px solid var(--line)}.mbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff3b5c,#f59e0b,#22d3ee)}
 .kin{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden}
 .burst{position:absolute;width:980px;height:980px;left:50%;top:52%;margin:-490px 0 0 -490px;background:#ff3b5c;opacity:.95}
 .kchip{position:relative;z-index:2;font-size:30px;font-weight:900;letter-spacing:.22em;color:#0b1220;background:#fff;padding:12px 26px;margin-bottom:34px}
@@ -59,25 +64,27 @@ function buildChunks(text,a,dur){
 window.setData=o=>{D=o.d;durs=o.durs;T=o.T;let a=0;durs.forEach(x=>{starts.push(a);a+=x});
  nPts=D.points.length;const S=[];
  if(D.hook_bg){const hb=document.getElementById('hbg');hb.style.backgroundImage='url('+D.hook_bg+')'}
- if(D.kinetic){
-  const kin=(txt,i,chip)=>{const ws=String(txt).replace(/[^\w'?!%€$&\- ]/g,' ').split(/\s+/).filter(Boolean).slice(0,i===0?8:7);
+ const HS=D.hookStyle||(D.kinetic?'kinetic':'classic'), PS=D.pointStyle||(D.kinetic?'kinetic':'cards');
+ const kin=(txt,i,chip)=>{const ws=String(txt).replace(/[^\w'?!%€$&\- ]/g,' ').split(/\s+/).filter(Boolean).slice(0,i===0?8:7);
    const lines=[];for(let j=0;j<ws.length;j+=2)lines.push(ws.slice(j,j+2));let n=0;
    const sty=['','inv','cy','out','','inv'];
    const html=lines.map(l=>'<span class="kline">'+l.map(w=>{const c=sty[(n+i)%sty.length];const sz=Math.max(92,Math.min(190,Math.round(1500/Math.max(4,w.length*1.0+3))));return '<span class="kw '+c+'" data-k="'+(n++)+'" style="font-size:'+sz+'px">'+esc(w)+'</span>'}).join('')+'</span>').join('');
-   kinN.push(n);return '<div class="kin"><div class="burst" id="bu'+i+'" style="background:'+(i===0?'#ff3b5c':'var(--cyan)')+'"></div>'+(chip?'<div class="kchip">'+chip+'</div>':'')+'<div class="kwords" id="kw'+i+'">'+html+'</div><div class="wipe" id="wp'+i+'"></div></div>'};
-  S.push(kin(D.hook,0,''));
-  D.points.forEach((p,i)=>S.push(kin(p,i+1,'STEP '+(i+1)+' / '+nPts)));
- } else {
- S.push('<div class="chip">THECOPYGRIND3R · DAILY</div><div class="rings"><i id="r1"></i><i id="r2"></i><i id="r3"></i><b></b></div>');
- D.points.forEach((p,i)=>S.push('<div class="stepnum">0'+(i+1)+'</div><div class="steplab">STEP '+(i+1)+' OF '+nPts+'</div><div class="card">'+esc(short(p,9))+'</div><div class="bar"><i id="bar'+i+'"></i></div>'));
- }
- const TL=D.tiles||[['Leads found','leads'],['Emails sent','sent'],['Replies','replies']];
- S.push('<div class="chip">'+esc(D.statsChip||'REAL NUMBERS · OUR OWN PIPELINE')+'</div>'+TL.map((x,j)=>'<div class="tile"'+(j===TL.length-1?' style="border-color:var(--cyan)"':'')+'><span class="l">'+esc(x[0])+'</span><span class="v'+(j===TL.length-1?' cy':'')+'" id="v'+(j+1)+'">0</span></div>').join(''));
+   kinN[i]=n;return '<div class="kin"><div class="burst" id="bu'+i+'" style="background:'+(i===0?'#ff3b5c':'var(--cyan)')+'"></div>'+(chip?'<div class="kchip">'+chip+'</div>':'')+'<div class="kwords" id="kw'+i+'">'+html+'</div><div class="wipe" id="wp'+i+'"></div></div>'};
+ if(HS==='kinetic') S.push(kin(D.hook,0,''));
+ else if(HS==='notif') S.push('<div class="ntf" id="ntf"><div class="ntop"><span class="nic">✉</span><span class="napp">NEW ENQUIRY</span><span class="ntm" id="ntm">now</span></div><div class="nmsg">'+esc(short(D.hook,16))+'</div></div><div class="ncount" id="ncount">unanswered <b id="ncn">1</b></div>');
+ else S.push('<div class="chip">THECOPYGRIND3R · DAILY</div><div class="rings"><i id="r1"></i><i id="r2"></i><i id="r3"></i><b></b></div>');
+ const ML=D.meterLabels||['Clarity','Speed','Trust','Ask'];
+ D.points.forEach((p,i)=>{
+  if(PS==='kinetic') S.push(kin(p,i+1,'STEP '+(i+1)+' / '+nPts));
+  else S.push((PS==='meter'?'<div class="mtr"><div class="mlab">WEBSITE CHECK · +'+esc(ML[i%ML.length]).toUpperCase()+'</div><div class="mbar"><i id="mb'+i+'"></i></div></div>':'')+'<div class="stepnum">0'+(i+1)+'</div><div class="steplab">STEP '+(i+1)+' OF '+nPts+'</div><div class="card">'+esc(short(p,9))+'</div><div class="bar"><i id="bar'+i+'"></i></div>');
+ });
+const TL=D.tiles||[['Leads found','leads'],['Emails sent','sent'],['Replies','replies']];
+ if(D.statsLine) S.push('<div class="chip">'+esc(D.statsChip||'REAL NUMBERS · OUR OWN PIPELINE')+'</div>'+TL.map((x,j)=>'<div class="tile"'+(j===TL.length-1?' style="border-color:var(--cyan)"':'')+'><span class="l">'+esc(x[0])+'</span><span class="v'+(j===TL.length-1?' cy':'')+'" id="v'+(j+1)+'">0</span></div>').join(''));
  S.push('<div class="chip">YOUR TURN</div><div style="font-size:84px;font-weight:900;line-height:1.05;margin-bottom:60px">Send us your site.</div><span class="btn">thecopygrind3r.pages.dev</span>');
  const st=document.getElementById('stage');st.innerHTML=S.map((h,i)=>'<div class="scene" id="sc'+i+'">'+h+'</div>').join('');
  S.forEach((_,i)=>els.push(document.getElementById('sc'+i)));
  document.querySelectorAll('.kwords').forEach(kw=>{kw.parentNode.parentNode.style.opacity=1;kw.querySelectorAll('.kline').forEach(l=>{let g=0;while(l.getBoundingClientRect().width>940&&g++<40){l.querySelectorAll('.kw').forEach(w=>{w.style.fontSize=(parseFloat(w.style.fontSize)*0.93)+'px'})}});let g2=0;while(kw.scrollHeight>820&&g2++<30){kw.querySelectorAll('.kw').forEach(w=>{w.style.fontSize=(parseFloat(w.style.fontSize)*0.94)+'px'})}kw.parentNode.parentNode.style.opacity=0});
- const segs=[D.hook,...D.points,D.statsLine,D.cta];
+ const segs=[D.hook,...D.points].concat(D.statsLine?[D.statsLine]:[]).concat([D.cta]);
  segs.forEach((s,i)=>buildChunks(s,starts[i],durs[i]));
 };
 let lastChunk=-1;
@@ -88,16 +95,16 @@ window.setT=t=>{
  els.forEach((e,i)=>{const a=starts[i],b=a+durs[i];const on=t>=a&&t<b+.12;const k=E(R(t,a,a+.3));e.style.opacity=on?Math.min(k,1-R(t,b-.12,b+.12)):0;e.style.transform='scale('+(.92+.08*k)+')'});
  [1,2,3].forEach(n=>{const r=document.getElementById('r'+n);if(!r)return;const p=((t*0.6+n/3)%1);r.style.transform='scale('+(0.35+p*0.75)+')';r.style.opacity=(1-p).toFixed(3)});
  for(let i=0;i<nPts;i++){const b=document.getElementById('bar'+i);if(b)b.style.width=(100*R(t,starts[i+1],starts[i+1]+durs[i+1]))+'%'}
- const si=1+nPts;const st=starts[si];(D.tiles||[[0,'leads'],[0,'sent'],[0,'replies']]).map((x,j)=>['v'+(j+1),x[1],j*.4]).forEach(([id,k,dl])=>{const p=E(R(t,st+.3+dl,st+1.6+dl));const el=document.getElementById(id);if(el)el.textContent=Math.round((D.stats[k]||0)*p)});
+ const si=1+nPts;const st=D.statsLine?starts[si]:1e9;(D.tiles||[[0,'leads'],[0,'sent'],[0,'replies']]).map((x,j)=>['v'+(j+1),x[1],j*.4]).forEach(([id,k,dl])=>{const p=E(R(t,st+.3+dl,st+1.6+dl));const el=document.getElementById(id);if(el)el.textContent=Math.round((D.stats[k]||0)*p)});
  const ci=chunks.findIndex(c=>t>=c.s&&t<c.e);const cap=document.getElementById('capt');
  if(ci>=0){const c=chunks[ci];if(ci!==lastChunk){cap.innerHTML=c.ws.map(o=>'<span>'+esc(o.w)+'</span>').join(' ');fitCap(cap);lastChunk=ci}
   const sp=cap.querySelectorAll('span');c.ws.forEach((o,j)=>{sp[j].className=t>=o.s?'on':''});
   const k=E(R(t,c.s,c.s+.12));cap.style.transform='scale('+(0.85+0.15*k)+')';cap.style.opacity=k}
  else{cap.style.opacity=0}
  const hb=document.getElementById('hbg');if(D.hook_bg){const b0=durs[0];hb.style.opacity=(t<b0+.15?1-R(t,b0-.1,b0+.15):0);hb.style.transform='scale('+(1.08-0.08*R(t,0,b0))+')'}
- if(D.kinetic){let shake=0;
+ if(kinN.length){let shake=0;
   for(let i=0;i<=nPts;i++){const a=starts[i],dur=durs[i],lt=t-a;if(lt<-.1||lt>dur+.2)continue;
-   const n=kinN[i]||1;const gap=Math.min(.24,(dur*.55)/n);let last=-9;
+   if(!kinN[i])continue;const n=kinN[i];const gap=Math.min(.24,(dur*.55)/n);let last=-9;
    document.querySelectorAll('#kw'+i+' .kw').forEach(sp=>{const j=+sp.dataset.k;const s0=.18+j*gap;if(lt>=s0)last=Math.max(last,s0);const k=E(R(lt,s0,s0+.17));
     sp.style.opacity=k;sp.style.transform='scale('+(2.3-1.3*k)+') rotate('+((1-k)*(j%2?6:-6))+'deg)';sp.style.filter='blur('+((1-k)*10).toFixed(1)+'px)'});
    const pulse=Math.exp(-Math.max(0,lt-last)*7);shake=Math.max(shake,pulse);
@@ -107,6 +114,10 @@ window.setT=t=>{
   }
   const st=document.getElementById('stage');st.style.transform='translate('+(Math.sin(t*90)*14*shake).toFixed(1)+'px,'+(Math.cos(t*77)*10*shake).toFixed(1)+'px)';
  }
+ const nf=document.getElementById('ntf');if(nf){const k=E(R(t,.05,.45));const bounce=Math.sin(R(t,.45,.9)*Math.PI)*14;nf.style.transform='translateY('+((1-k)*-420+bounce)+'px)';nf.style.opacity=k;
+  const cn=document.getElementById('ncn');const c=1+Math.floor(Math.max(0,t-.9)/Math.max(.35,(durs[0]-1)/5));if(cn)cn.textContent=Math.min(c,7);const tm=document.getElementById('ntm');if(tm)tm.textContent=t<1.6?'now':Math.floor(t/1.6)+' min ago';
+  const nc=document.getElementById('ncount');if(nc)nc.style.opacity=E(R(t,.9,1.2))}
+ for(let i=0;i<nPts;i++){const m=document.getElementById('mb'+i);if(m){const a=starts[i+1];m.style.width=(100*(i+E(R(t,a+.2,a+1.2)))/nPts)+'%'}}
  document.getElementById('pb').style.width=(100*t/T)+'%';
 };
 </script></body></html>

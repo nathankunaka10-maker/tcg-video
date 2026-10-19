@@ -145,7 +145,7 @@ def render_ad(d):
 def render_daily(d):
     os.makedirs('out', exist_ok=True)
     aud = None; adur = 0
-    segs = [d['hook']] + d['points'] + [d['statsLine'], d['cta']]
+    segs = [d['hook']] + d['points'] + ([d['statsLine']] if d.get('statsLine') else []) + [d['cta']]
     if d.get('audio_b64'):
         open('narr.pcm', 'wb').write(base64.b64decode(d['audio_b64']))
         sh(['ffmpeg', '-y', '-f', 's16le', '-ar', '24000', '-ac', '1', '-i', 'narr.pcm', 'narr.wav'])
@@ -175,18 +175,24 @@ def render_daily(d):
             print('pause sync skipped:', e)
     import random as _r
     kp = float(os.environ.get('KINETIC_P', '0.5'))
-    d['kinetic'] = os.environ.get('KINETIC', '') == 'on' or (os.environ.get('KINETIC', '') != 'off' and _r.random() < kp)
+    kin_env = os.environ.get('KINETIC', '')
+    if kin_env == 'on': d['hookStyle'], d['pointStyle'] = 'kinetic', 'kinetic'
+    elif kin_env == 'off': d['hookStyle'], d['pointStyle'] = 'classic', 'cards'
+    else:
+        d['hookStyle'] = os.environ.get('HOOK_STYLE') or _r.choices(['kinetic', 'notif', 'classic'], [0.45, 0.35, 0.2])[0]
+        d['pointStyle'] = os.environ.get('POINT_STYLE') or _r.choices(['kinetic', 'meter', 'cards'], [0.4, 0.35, 0.25])[0]
+    d['kinetic'] = d['hookStyle'] == 'kinetic'
     hb = 'assets/gen/%s_hook.jpg' % d.get('id', '')
     if os.path.exists(hb):
         shutil.copy(hb, 'hookbg.jpg'); d['hook_bg'] = 'hookbg.jpg'; print('using AI hook background')
-    print('kinetic' if d['kinetic'] else 'classic', 'style')
+    print('styles:', d['hookStyle'], d['pointStyle'])
     asyncio.run(snap('template.html', {'d': d, 'durs': durs, 'T': T}, T, False))
     cmd = ['ffmpeg', '-y', '-framerate', str(FPS), '-i', 'frames/f%04d.jpg']
     if aud: cmd += ['-i', aud, '-c:a', 'aac', '-b:a', '160k', '-shortest']
     cmd += ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20', '-movflags', '+faststart', 'out/latest.mp4']
     sh(cmd)
     ai = False
-    if not d.get('kinetic') and use_ugc(float(os.environ.get('UGC_DAILY_P', '0.4'))):
+    if d.get('hookStyle') == 'classic' and use_ugc(float(os.environ.get('UGC_DAILY_P', '0.4'))):
         try:
             hook = min(durs[0], 5.0)
             fetch(UGC_BASE + ugc_pick(), 'ugc.mp4')
@@ -199,7 +205,7 @@ def render_daily(d):
             print('added AI cutaway on hook')
         except Exception as e:
             print('ugc cutaway skipped:', e)
-    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud), 'ai_clip': ai, 'kinetic': bool(d.get('kinetic')), 'hook_bg': bool(d.get('hook_bg'))}, open('out/meta.json', 'w'))
+    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud), 'ai_clip': ai, 'hook_style': d.get('hookStyle'), 'point_style': d.get('pointStyle'), 'hook_bg': bool(d.get('hook_bg'))}, open('out/meta.json', 'w'))
     print('rendered', T)
 
 if __name__ == '__main__':
