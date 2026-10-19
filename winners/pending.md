@@ -34,3 +34,11 @@ W7 two-person "do these 3 things" skit (buildwithnico, 57s, received 19 Oct)
 - Body: Step 1/2/3 header cards + big screenshots of the exact screen (DNS record, resend docs, sitemap.xml, Search Console) as picture-in-picture over the talker; bold word-by-word captions bottom; one warning sticker ("WON'T WORK for cold email marketing!").
 - Close: second person "Whoa, where did you even learn this?" -> name drop of the creator. Soft follow CTA.
 - Ours: "3 things to set up after your agency site goes live" (real, checkable: Google Business Profile link, enquiry auto-reply, form-to-inbox test). Step cards + real screen screenshots: copyable now with template + stat/UI overlays. The two-person skit and talking head are NOT free (no lip-sync); swap to AI desk clip + on-screen text + voiceover, closing line as text: "where did you learn this? -> @thecopygrind3r". Text: yes (numbered steps carousel).
+
+W8 "there will be signs" before/after (talksocialsmarketing, 15s, received 19 Oct)
+- Hook: back-of-head POV at a desk + caption "We won't tell anyone you hired a social media manager, but there will be signs". Then Before (cluttered flyer posts) -> After (clean cohesive grid). Trending song, no voice.
+- Ours: "We won't tell anyone you hired someone for your enquiries, but there will be signs" -> Before: inbox 47 unread / form with no reply; After: replies in under a minute, viewings booked (illustrative UI). Copyable now with notif/stats overlays + AI desk clip as POV.
+
+W9 "I gave Claude my brand" tool showcase (mr.pynk, 40s, received 19 Oct, 2k comments)
+- Hook: "I give Claude my brand and this is the result" + floating output images around the talker; 3 named skills (product shot, ad generator, animator); CTA "comment and I DM you" + "all workflows on my Instagram".
+- Comment intel: viewers ask "which tool? is it free?" -> curiosity about the tool drives comments. Ours: "I gave my AI system an estate agent's website and this is what it found" with real outputs (audit screenshot, reply draft), keyword DM CTA. Talking head not free; use AI desk clip + floating output cards.
