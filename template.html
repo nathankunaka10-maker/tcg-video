@@ -50,18 +50,19 @@ html,body{width:1080px;height:1920px;background:#0b1220;color:#fff;font-family:I
 <script>
 const E=x=>1-Math.pow(1-Math.min(Math.max(x,0),1),3),R=(t,a,b)=>Math.min(Math.max((t-a)/(b-a),0),1);
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-let D,durs,T,starts=[],els=[],chunks=[],nPts=0,kinN=[];
+let D,durs,T,WT=null,starts=[],els=[],chunks=[],nPts=0,kinN=[];
 function short(s,n){const w=String(s).split(/\s+/);return w.length<=n?s:w.slice(0,n).join(' ')+'…'}
-function buildChunks(text,a,dur){
+function buildChunks(text,a,dur,tw){
  const words=String(text).replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
  const groups=[];let g=[];
  words.forEach((w,i)=>{g.push(w);const end=/[.,!?;:]$/.test(w);if(g.length>=3||end||i===words.length-1){groups.push(g);g=[]}});
+ if(tw&&tw.length===words.length){let k=0;const cs=groups.map(gr=>{const ws=gr.map(w=>({w,s:tw[k++]}));return {s:ws[0].s,ws}});cs.forEach((c,j)=>{c.e=j<cs.length-1?cs[j+1].s:Math.max(a+dur,c.s+.3);chunks.push(c)});return}
  const wt=w=>Math.max(w.replace(/[^\w]/g,'').length,2)+2;
  const total=groups.reduce((s,gr)=>s+gr.reduce((x,w)=>x+wt(w),0)+3,0);
  let t=a+0.05;const usable=dur-0.15;
  groups.forEach(gr=>{const gw=gr.reduce((x,w)=>x+wt(w),0)+3;const gd=usable*gw/total;let wt0=t;const ws=gr.map(w=>{const d=gd*wt(w)/gw;const o={w,s:wt0};wt0+=d;return o});chunks.push({s:t,e:t+gd,ws});t+=gd});
 }
-window.setData=o=>{D=o.d;durs=o.durs;T=o.T;let a=0;durs.forEach(x=>{starts.push(a);a+=x});
+window.setData=o=>{D=o.d;durs=o.durs;T=o.T;WT=o.wts||null;let a=0;durs.forEach(x=>{starts.push(a);a+=x});
  nPts=D.points.length;const S=[];
  if(D.hook_bg){const hb=document.getElementById('hbg');hb.style.backgroundImage='url('+D.hook_bg+')'}
  const HS=D.hookStyle||(D.kinetic?'kinetic':'classic'), PS=D.pointStyle||(D.kinetic?'kinetic':'cards');
@@ -85,7 +86,7 @@ const TL=D.tiles||[['Leads found','leads'],['Emails sent','sent'],['Replies','re
  S.forEach((_,i)=>els.push(document.getElementById('sc'+i)));
  document.querySelectorAll('.kwords').forEach(kw=>{kw.parentNode.parentNode.style.opacity=1;kw.querySelectorAll('.kline').forEach(l=>{let g=0;while(l.getBoundingClientRect().width>940&&g++<40){l.querySelectorAll('.kw').forEach(w=>{w.style.fontSize=(parseFloat(w.style.fontSize)*0.93)+'px'})}});let g2=0;while(kw.scrollHeight>820&&g2++<30){kw.querySelectorAll('.kw').forEach(w=>{w.style.fontSize=(parseFloat(w.style.fontSize)*0.94)+'px'})}kw.parentNode.parentNode.style.opacity=0});
  const segs=[D.hook,...D.points].concat(D.statsLine?[D.statsLine]:[]).concat([D.cta]);
- segs.forEach((s,i)=>buildChunks(s,starts[i],durs[i]));
+ segs.forEach((s,i)=>buildChunks(s,starts[i],durs[i],WT&&WT[i]));
 };
 let lastChunk=-1;
 function fitCap(el){let s=150;el.style.fontSize=s+'px';while((el.scrollWidth>960||el.scrollHeight>400)&&s>60){s-=6;el.style.fontSize=s+'px'}}
@@ -105,7 +106,7 @@ window.setT=t=>{
  if(kinN.length){let shake=0;
   for(let i=0;i<=nPts;i++){const a=starts[i],dur=durs[i],lt=t-a;if(lt<-.1||lt>dur+.2)continue;
    if(!kinN[i])continue;const n=kinN[i];const gap=Math.min(.24,(dur*.55)/n);let last=-9;
-   document.querySelectorAll('#kw'+i+' .kw').forEach(sp=>{const j=+sp.dataset.k;const s0=.18+j*gap;if(lt>=s0)last=Math.max(last,s0);const k=E(R(lt,s0,s0+.17));
+   const tw=WT&&WT[i];document.querySelectorAll('#kw'+i+' .kw').forEach(sp=>{const j=+sp.dataset.k;const s0=tw&&tw.length?Math.max(0,tw[Math.min(j,tw.length-1)]-a-.04):.18+j*gap;if(lt>=s0)last=Math.max(last,s0);const k=E(R(lt,s0,s0+.17));
     sp.style.opacity=k;sp.style.transform='scale('+(2.3-1.3*k)+') rotate('+((1-k)*(j%2?6:-6))+'deg)';sp.style.filter='blur('+((1-k)*10).toFixed(1)+'px)'});
    const pulse=Math.exp(-Math.max(0,lt-last)*7);shake=Math.max(shake,pulse);
    const bu=document.getElementById('bu'+i);if(bu){const N=14,ri=.55+.25*Math.sin(lt*3.2+i),pts=[];for(let q=0;q<N*2;q++){const ang=q*Math.PI/N+lt*.35;const r=(q%2?ri:1)*50;pts.push((50+r*Math.cos(ang)).toFixed(2)+'% '+(50+r*Math.sin(ang)).toFixed(2)+'%')}

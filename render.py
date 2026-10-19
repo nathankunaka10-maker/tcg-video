@@ -58,6 +58,58 @@ def edge_tts(text, out_wav, voice='en-GB-RyanNeural'):
     except Exception as e:
         print('edge-tts failed:', e); return False
 
+def align_words(aud, segs, T):
+    """Real word timings from the voiceover (free faster-whisper tiny.en on CPU).
+    Returns (durs, wts) where wts[i] = absolute start time of every script word in segment i, or None."""
+    try:
+        import difflib
+        subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'faster-whisper'], check=True, capture_output=True)
+        from faster_whisper import WhisperModel
+        m = WhisperModel('tiny.en', device='cpu', compute_type='int8')
+        import numpy as np
+        pcm = subprocess.run(['ffmpeg', '-v', 'error', '-i', aud, '-f', 's16le', '-ac', '1', '-ar', '16000', '-'], check=True, capture_output=True).stdout
+        res, _ = m.transcribe(np.frombuffer(pcm, np.int16).astype(np.float32) / 32768.0, word_timestamps=True, language='en', vad_filter=False)
+        norm = lambda w: re.sub(r'[^a-z0-9]', '', w.lower())
+        rec = [(norm(w.word), float(w.start), float(w.end)) for sg in res for w in (sg.words or []) if norm(w.word)]
+        script = [(i, norm(w)) for i, s in enumerate(segs) for w in str(s).split()]
+        if not rec or not script:
+            return None
+        times = [None] * len(script)
+        sm = difflib.SequenceMatcher(None, [x[1] for x in script], [r[0] for r in rec], autojunk=False)
+        hit = 0
+        for a, b, n in sm.get_matching_blocks():
+            for k in range(n):
+                times[a + k] = rec[b + k][1]; hit += 1
+        if hit < 0.6 * len(script):
+            print('word align: only %d/%d words matched, skipping' % (hit, len(script))); return None
+        known = [k for k, t in enumerate(times) if t is not None]
+        for k in range(len(times)):
+            if times[k] is None:
+                lo = max([j for j in known if j < k], default=None); hi = min([j for j in known if j > k], default=None)
+                if lo is not None and hi is not None:
+                    times[k] = times[lo] + (times[hi] - times[lo]) * (k - lo) / (hi - lo)
+                elif lo is not None:
+                    times[k] = min(times[lo] + 0.3 * (k - lo), T - 0.2)
+                else:
+                    times[k] = max(times[hi] - 0.3 * (hi - k), 0.0)
+        for k in range(1, len(times)):
+            times[k] = max(times[k], times[k - 1] + 0.05)
+        wts = [[] for _ in segs]
+        for (i, _), t in zip(script, times):
+            wts[i].append(round(float(t), 3))
+        starts = [0.0] + [max(wts[i][0] - 0.12, 0.0) if wts[i] else None for i in range(1, len(segs))]
+        for i in range(1, len(starts)):
+            if starts[i] is None or starts[i] <= starts[i - 1] + 0.4:
+                starts[i] = starts[i - 1] + 0.4
+        bounds = starts + [T]
+        durs = [float(bounds[i + 1] - bounds[i]) for i in range(len(segs))]
+        if any(x <= 0.3 for x in durs):
+            return None
+        print('word align: %d/%d words matched to the voice' % (hit, len(script)))
+        return durs, wts
+    except Exception as e:
+        print('word align skipped:', e); return None
+
 def music_bed(seconds, out_wav):
     """Royalty-free bed synthesised from scratch: soft chord pad, kick, hats. Nothing licensed."""
     bpm = 96.0; beat = 60.0 / bpm; bar = beat * 4
@@ -184,7 +236,11 @@ def render_daily(d):
     words = [max(len(s.split()), 3) for s in segs]
     T = max(adur + 1.0, 18.0) if aud else min(max(16.0, sum(words) * 0.34 + len(segs) * 0.7), 42.0)
     durs = [T * w / sum(words) for w in words]
-    if aud:
+    wts = None
+    al = align_words(aud, segs, T) if aud else None
+    if al:
+        durs, wts = al
+    if aud and not al:
         try:
             log = subprocess.run(['ffmpeg', '-i', aud, '-af', 'silencedetect=noise=-35dB:d=0.25', '-f', 'null', '-'], capture_output=True, text=True).stderr
             ss = [float(x) for x in re.findall(r'silence_start: ([\d.]+)', log)]
@@ -224,7 +280,7 @@ def render_daily(d):
             aud = 'music.wav'
         except Exception as e:
             print('music failed:', e)
-    asyncio.run(snap('template.html', {'d': d, 'durs': durs, 'T': T}, T, False))
+    asyncio.run(snap('template.html', {'d': d, 'durs': durs, 'T': T, 'wts': wts}, T, False))
     cmd = ['ffmpeg', '-y', '-framerate', str(FPS), '-i', 'frames/f%04d.jpg']
     if aud: cmd += ['-i', aud, '-c:a', 'aac', '-b:a', '160k', '-shortest']
     cmd += ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20', '-movflags', '+faststart', 'out/latest.mp4']
@@ -243,7 +299,7 @@ def render_daily(d):
             print('added AI cutaway on hook')
         except Exception as e:
             print('ugc cutaway skipped:', e)
-    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud) and aud != 'music.wav', 'ai_clip': ai, 'hook_style': d.get('hookStyle'), 'point_style': d.get('pointStyle'), 'hook_bg': bool(d.get('hook_bg'))}, open('out/meta.json', 'w'))
+    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud) and aud != 'music.wav', 'ai_clip': ai, 'hook_style': d.get('hookStyle'), 'point_style': d.get('pointStyle'), 'hook_bg': bool(d.get('hook_bg')), 'word_synced': bool(wts)}, open('out/meta.json', 'w'))
     print('rendered', T)
 
 if __name__ == '__main__':
