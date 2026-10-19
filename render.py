@@ -158,6 +158,7 @@ def render_ad(d):
     T = sum(s['dur'] for s in d['scenes']) + END
     asyncio.run(snap('ad.html', d, T, True))
     pick_music(T, 'music.wav')
+    sh(['ffmpeg', '-y', '-i', 'music.wav', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', '44100', 'music_n.wav']); os.replace('music_n.wav', 'music.wav')
     sh(['ffmpeg', '-y', '-i', 'base.mp4', '-framerate', str(FPS), '-i', 'frames/f%04d.png', '-i', 'music.wav',
         '-filter_complex', '[0:v][1:v]overlay=0:0:shortest=1[v]', '-map', '[v]', '-map', '2:a',
         '-c:v', 'libx264', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', 'out/latest.mp4'])
@@ -219,6 +220,7 @@ def render_daily(d):
                 add_whooshes('music_raw.wav', st0, T, 'music.wav')
             except Exception as e:
                 print('whoosh skipped:', e); os.replace('music_raw.wav', 'music.wav')
+            sh(['ffmpeg', '-y', '-i', 'music.wav', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', '44100', 'music_n.wav']); os.replace('music_n.wav', 'music.wav')
             aud = 'music.wav'
         except Exception as e:
             print('music failed:', e)
