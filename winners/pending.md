@@ -28,3 +28,9 @@ W6 trend cold-open + process + reveal (automotive_elegance, 25s)
 - Ours: stock "fast" cold open, then fast montage of a site being fixed (screens), ends on clean mobile site + booked viewing. Never use the copyrighted meme clip. Video: partly copyable.
 
 Extra: 50 hook templates (hook_templates_50.txt) -> add to PROMPTS HOOKS row.
+
+W7 two-person "do these 3 things" skit (buildwithnico, 57s, received 19 Oct)
+- Hook: title card "3 Steps / After buying your domain" + coworker POV ("let's get ready, set up these 3 things").
+- Body: Step 1/2/3 header cards + big screenshots of the exact screen (DNS record, resend docs, sitemap.xml, Search Console) as picture-in-picture over the talker; bold word-by-word captions bottom; one warning sticker ("WON'T WORK for cold email marketing!").
+- Close: second person "Whoa, where did you even learn this?" -> name drop of the creator. Soft follow CTA.
+- Ours: "3 things to set up after your agency site goes live" (real, checkable: Google Business Profile link, enquiry auto-reply, form-to-inbox test). Step cards + real screen screenshots: copyable now with template + stat/UI overlays. The two-person skit and talking head are NOT free (no lip-sync); swap to AI desk clip + on-screen text + voiceover, closing line as text: "where did you learn this? -> @thecopygrind3r". Text: yes (numbered steps carousel).
