@@ -1,0 +1,28 @@
+name: probe-spaces
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        default: 'tools/probe_spaces.py'
+      spaces:
+        default: ''
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install gradio_client pillow
+      - run: python ${{ inputs.script }}
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SPACES: ${{ inputs.spaces }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: probe-${{ github.run_id }}
+          path: probe_out/
+          if-no-files-found: ignore
