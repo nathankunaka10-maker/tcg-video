@@ -81,7 +81,7 @@ window.setData=o=>{D=o.d;durs=o.durs;T=o.T;WT=o.wts||null;let a=0;durs.forEach(x
  });
 const TL=D.tiles||[['Leads found','leads'],['Emails sent','sent'],['Replies','replies']];
  if(D.statsLine) S.push('<div class="chip">'+esc(D.statsChip||'REAL NUMBERS · OUR OWN PIPELINE')+'</div>'+TL.map((x,j)=>'<div class="tile"'+(j===TL.length-1?' style="border-color:var(--cyan)"':'')+'><span class="l">'+esc(x[0])+'</span><span class="v'+(j===TL.length-1?' cy':'')+'" id="v'+(j+1)+'">0</span></div>').join(''));
- S.push('<div class="chip">YOUR TURN</div><div style="font-size:84px;font-weight:900;line-height:1.05;margin-bottom:60px">Send us your site.</div><span class="btn">thecopygrind3r.pages.dev</span>');
+ S.push('<div class="chip">YOUR TURN</div><div style="font-size:84px;font-weight:900;line-height:1.05;margin-bottom:60px">Want me to check yours?</div><span class="btn" style="font-size:64px;padding:28px 56px">Comment AUDIT</span><div style="font-size:40px;font-weight:700;color:#9ca3af;margin-top:48px;line-height:1.3">I will DM you the one thing<br>on your site that stops enquiries.</div>');
  const st=document.getElementById('stage');st.innerHTML=S.map((h,i)=>'<div class="scene" id="sc'+i+'">'+h+'</div>').join('');
  S.forEach((_,i)=>els.push(document.getElementById('sc'+i)));
  document.querySelectorAll('.kwords').forEach(kw=>{kw.parentNode.parentNode.style.opacity=1;kw.querySelectorAll('.kline').forEach(l=>{let g=0;while(l.getBoundingClientRect().width>940&&g++<40){l.querySelectorAll('.kw').forEach(w=>{w.style.fontSize=(parseFloat(w.style.fontSize)*0.93)+'px'})}});let g2=0;while(kw.scrollHeight>820&&g2++<30){kw.querySelectorAll('.kw').forEach(w=>{w.style.fontSize=(parseFloat(w.style.fontSize)*0.94)+'px'})}kw.parentNode.parentNode.style.opacity=0});
