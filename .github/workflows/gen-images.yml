@@ -1,0 +1,40 @@
+name: gen-images
+on:
+  workflow_dispatch:
+    inputs:
+      test_items:
+        default: ''
+  schedule:
+    - cron: '20 6 * * *'
+permissions:
+  contents: write
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y fonts-inter || true
+      - run: pip install gradio_client pillow
+      - run: python gen_images.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          TEST_ITEMS: ${{ inputs.test_items }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: images-${{ github.run_id }}
+          path: assets/gen/
+          if-no-files-found: ignore
+      - name: commit images
+        if: ${{ inputs.test_items == '' }}
+        run: |
+          git config user.name tcg
+          git config user.email tcg@users.noreply.github.com
+          git add -A assets/gen
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -qm "images $(date -u +%F)"
+          git pull -q --rebase
+          git push
