@@ -42,3 +42,24 @@ W8 "there will be signs" before/after (talksocialsmarketing, 15s, received 19 Oc
 W9 "I gave Claude my brand" tool showcase (mr.pynk, 40s, received 19 Oct, 2k comments)
 - Hook: "I give Claude my brand and this is the result" + floating output images around the talker; 3 named skills (product shot, ad generator, animator); CTA "comment and I DM you" + "all workflows on my Instagram".
 - Comment intel: viewers ask "which tool? is it free?" -> curiosity about the tool drives comments. Ours: "I gave my AI system an estate agent's website and this is what it found" with real outputs (audit screenshot, reply draft), keyword DM CTA. Talking head not free; use AI desk clip + floating output cards.
+
+W10 "you just watched X for 7 seconds" countdown + brand twist (motiontheory.media, 32s, received 20 Oct, 631K views on a 7K-follower account, 21K likes, 14K shares, 2.9K comments)
+- Hook (0-7s): minimal clean frame, a real-world object (bullet about to hit a can) with a big counter "FRAMES TO IMPACT" ticking down 176 -> 7, slowed so the counter and object both slowly grow. Open loop: viewer waits for the hit. Camera-HUD frame (REC timer, "100,000 FPS"), no voice, steady beat (~117 BPM).
+- Turn (7-17s): the hit never comes. Text flips the viewer: "You just watched a bullet for 7 seconds. A bullet that doesn't exist. And you're still here, waiting for it to hit." (wireframe flash proves it was fake). Pattern: make the viewer realise their own attention was captured.
+- Pitch (17-22s): "Now imagine that was your brand." Object moves into a phone feed mockup, then phone shows dashboard UI (conversions chart). "We make visuals people can't stop watching."
+- Close (22-32s): object shatters into the logo, CTA pill: DM "HIT" for a free reel idea. Keyword DM CTA, logo card held about 8s (loop point).
+- Why it won (data): 14.3K shares vs 21.4K likes = shares are the main signal, because the idea (attention trick) is worth sending to friends and clients. Completion is forced by the open loop counter. Comments ask how it was made.
+- Ours: counter = "ENQUIRIES UNANSWERED" or "MINUTES SINCE ENQUIRY" ticking up on a phone notification (23:47) while nothing happens, then flip: "You just watched an enquiry sit unanswered for 7 seconds. Your customers do this for 7 hours." -> "Now imagine that was your website." -> auto-reply replies in 40 sec, viewing booked (illustrative UI) -> DM/comment "AUDIT". Video: copyable now (counter in template, notif overlay, no stock clip needed, pure motion graphics = zero AI-slop risk). Add as new hook style "countdown". Text: yes (post version: the flip line as hook).
+
+W11 floworxs "macro hero" product reels (floworxs, 16 posts, 6.2K followers, 2K-21K views each, bio "1:1 creatives that convert", received 20 Oct)
+- Format: 20-50s, NO text, NO voice. One product, extreme macro close-ups (diamonds, watch parts), slow camera moves, one colour grade per reel (deep blue / red-orange), hard cuts on the beat, cinematic score. Opens on an establishing shot of a "world" (ocean surface), dives into the product, ends on a brand card with logo/handle on black. Only watermark = small handle.
+- Why it works: instant "expensive" feeling, high completion because every 1-2s a new striking image, and the profile grid itself sells the service (all 16 reels look like one brand).
+- Reality check: made with paid AI video tools. We cannot match this free (our free video model is weaker). Do NOT fake it with weak clips. What we copy: one consistent colour grade across everything, grid that looks like one brand, hard cuts on the beat, handle card on black at the end, no clutter.
+- Ours: keep the dark navy/cyan palette fixed (already), add a "hold the last card on black with handle" ending, keep every scene's first frame striking.
+
+W12 floworxs process/proof reel (20s, received 20 Oct)
+- Hook text: "My jeweller client wanted to see what we make, I told him we charge $600 and finish in 2 days" over a screen recording of the editing timeline previewing the finished shots (Premiere), laptop filmed from the side, hard cuts through the finished work, ends on handle card.
+- Why it works: price + speed in the hook (concrete, curiosity), real client framing, shows the work being made (proof), outcome visible within 2 seconds.
+- Ours: "A solo estate agent asked what a 24/7 auto-reply costs. I said free to audit, live in 2 days" - ONLY with real prices/timelines Nathan confirms. No invented client or invented result. Visual: screen recording of the real n8n workflow / auto-reply chat on a phone; text hook over it. Video: copyable with screen-capture clips (needs real clip assets) + notif overlay.
+
+Account lesson (floworxs + motiontheory): both are tiny accounts (6-7K followers) with 20x-100x follower reach on single reels. Reach comes from the idea and completion, not follower count. Every post sells the service by being a sample of it. Keep a one-handle end card and a single keyword call to action.

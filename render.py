@@ -261,7 +261,7 @@ def render_daily(d):
     if kin_env == 'on': d['hookStyle'], d['pointStyle'] = 'kinetic', 'kinetic'
     elif kin_env == 'off': d['hookStyle'], d['pointStyle'] = 'classic', 'cards'
     else:
-        d['hookStyle'] = os.environ.get('HOOK_STYLE') or _r.choices(['kinetic', 'notif', 'classic'], [0.45, 0.35, 0.2])[0]
+        d['hookStyle'] = os.environ.get('HOOK_STYLE') or _r.choices(['kinetic', 'notif', 'classic', 'countdown'], [0.35, 0.3, 0.15, 0.2])[0]
         d['pointStyle'] = os.environ.get('POINT_STYLE') or _r.choices(['kinetic', 'meter', 'cards'], [0.4, 0.35, 0.25])[0]
     d['kinetic'] = d['hookStyle'] == 'kinetic'
     hb = 'assets/gen/%s_hook.jpg' % d.get('id', '')
