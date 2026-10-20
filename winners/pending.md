@@ -63,3 +63,6 @@ W12 floworxs process/proof reel (20s, received 20 Oct)
 - Ours: "A solo estate agent asked what a 24/7 auto-reply costs. I said free to audit, live in 2 days" - ONLY with real prices/timelines Nathan confirms. No invented client or invented result. Visual: screen recording of the real n8n workflow / auto-reply chat on a phone; text hook over it. Video: copyable with screen-capture clips (needs real clip assets) + notif overlay.
 
 Account lesson (floworxs + motiontheory): both are tiny accounts (6-7K followers) with 20x-100x follower reach on single reels. Reach comes from the idea and completion, not follower count. Every post sells the service by being a sample of it. Keep a one-handle end card and a single keyword call to action.
+
+OFFER FACTS (confirmed by Nathan 20 Oct): 1000 euros, one-off; live in 3 working days (Claude's chosen timeframe, Nathan builds it). Only these two facts may be stated publicly; no other prices, discounts, guarantees or results.
+W13 price and speed hook (from floworxs W12): "An estate agent asked what it costs to never miss an enquiry. I said 1000 euros, once, live in 3 working days." Over a screen recording of the real auto-reply. CTA: comment AUDIT. In rotation Thu 22 Oct.
