@@ -66,3 +66,35 @@ Account lesson (floworxs + motiontheory): both are tiny accounts (6-7K followers
 
 OFFER FACTS (confirmed by Nathan 20 Oct): 1000 euros, one-off; live in 3 working days (Claude's chosen timeframe, Nathan builds it). Only these two facts may be stated publicly; no other prices, discounts, guarantees or results.
 W13 price and speed hook (from floworxs W12): "An estate agent asked what it costs to never miss an enquiry. I said 1000 euros, once, live in 3 working days." Over a screen recording of the real auto-reply. CTA: comment AUDIT. In rotation Thu 22 Oct.
+
+BATCH 24 Oct (5 videos + screenshots). Account facts from screenshots: ai.with.andrew (TikTok, 66.3K followers, 633K likes, top posts 350K / 255K / 150K / 143K views, all ~40-60s talking head + screen/b-roll); easyhive.ai carousel (4.2K likes, 5.8K comments, 6.3K shares, 7 slides); xzecreative (7.1K followers, reels only ~400-800 views, so a weak performer: copy nothing from its numbers); AI3E Reddit carousel.
+
+W14 "I just built X" + animated mechanism diagram (ai.with.andrew, 59s, his 350K-view style)
+- Hook line: "just built an AI that makes GPT, Claude and Gemini argue with each other before giving you an answer". Cutaway to a quoted authority clip for 2s (credibility), then the product idea explained with a simple node diagram (4 icons on a circle, arrows debate -> rank -> one chairman answer) with a small grey pill caption per phrase. Ends with "this full thing" soft CTA.
+- Ours: "I built a system that answers every enquiry in under a minute" + diagram scene (enquiry -> instant reply -> follow-up -> viewing booked), 4 nodes lighting up in order. Video: needs a NEW diagram scene in the template (nodes + moving dot). No face needed.
+
+W15 news/brand-jack hook + demo from one link (ai.with.andrew, 61s, 150K)
+- Hook: "Google has decided to completely destroy Canva, Midjourney and designers" with big brand logos, then a named tool, then screen-recorded demo: "you send a link, it analyzes your website, extracts the brand, generates a full campaign". Pill captions word by word, cutaway every ~2 s.
+- Ours: only with REAL news (never invent). Hook shape: "[Big platform] just [real change]. Here is what it means for estate agent enquiries." Plus our own "send us a link, we find the one thing on your site that stops enquiries" (that is the free audit). Needs a weekly real-news feed (trend brief already pulls trends).
+
+W16 word-by-word b-roll montage (ai.with.andrew, 42s)
+- Every 1-2 seconds the footage changes to match the exact spoken word (money printer for "$", Wikipedia page, logos, stock office), giant bold word captions, stat on black ("2100%"), hook with named companies (Anthropic, OpenAI) + stat, outro = TikTok search bar with the handle (search-driven CTA).
+- Ours: matches our Ad Studio pipeline (Pixabay clip per scene + UI overlay). Copyable now for TikTok: swap stock per phrase, end with a search-bar outro "search thecopygrind3r". No face.
+
+W17 POV ad over an editing timeline (mcvisuals.fx, 13s)
+- Caption "POV: you make ads for brands you use in real life" over a UI animation (Spotify) played above a real After Effects timeline; handle watermark; short, loops.
+- Ours: "POV: your enquiry answers itself at 23:47" over our reply UI above a timeline-style strip. 13s works as a loop. Copyable now with notif/chat overlays.
+
+W18 raw selfie "biggest mistake" talker (thecoltonholland, 61s)
+- Hook box caption "The biggest mistake I've seen from beginner vibecoders", unedited face to camera, one text box held the whole video. Retention comes from the claim + delivery, not edits.
+- Ours: face-on-camera is parked. Hook SHAPE is usable as text: "The biggest mistake I see from estate agents with [thing]". Already covered by the hook templates.
+
+W19 "Cancel your X subscription" carousel (easyhive.ai, 7 slides, 6.3K shares, 5.8K comments)
+- Slide pattern: one screenshot at the top, ONE sentence at the bottom on a dark gold-glow background; slide 1 hook "Cancel your Higgsfield subscription. Someone open sourced the same ...", then what it is, 38 models in one place, no monthly plan pay per use, price table, CTA. Shares beat likes = money-saving content gets sent to friends.
+- Ours: same as the "stop paying for it" recipe, with REAL free options only (form to inbox rule, Google Business Profile, free auto-reply). Carousel template: screenshot + one sentence per slide. Needs real screenshots of the real tools.
+
+W20 Reddit-post carousel (AI3E)
+- Slide 1: bold caps hook "THIS GUY ON REDDIT SHARES HOW HE SOLD ~200 WEBSITES IN 12 MONTHS USING AI AND AUTOMATION" over a cinematic image, SWIPE tag, then screenshots of the actual post text.
+- Careful: the post's claims are unverified and it is someone else's text. Ours: cover slide + our own short paraphrase with credit, never present the claims as fact, never reprint the full post. Our Reddit scanner can feed it. Lower priority.
+
+DATA POINT (Nathan's own TikTok business dashboard, 24 Oct): 3 reels: 1 at 30-45 s, 2 at 45-60 s. TikTok says 45-60 s reels got 75% more views. Sample is only 3 posts, but it matches every ai.with.andrew video (42-61 s). Our daily video is ~26 s. Test: longer 45-60 s version on some days.
