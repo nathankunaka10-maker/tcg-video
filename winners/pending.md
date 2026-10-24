@@ -97,4 +97,6 @@ W20 Reddit-post carousel (AI3E)
 - Slide 1: bold caps hook "THIS GUY ON REDDIT SHARES HOW HE SOLD ~200 WEBSITES IN 12 MONTHS USING AI AND AUTOMATION" over a cinematic image, SWIPE tag, then screenshots of the actual post text.
 - Careful: the post's claims are unverified and it is someone else's text. Ours: cover slide + our own short paraphrase with credit, never present the claims as fact, never reprint the full post. Our Reddit scanner can feed it. Lower priority.
 
-DATA POINT (Nathan's own TikTok business dashboard, 24 Oct): 3 reels: 1 at 30-45 s, 2 at 45-60 s. TikTok says 45-60 s reels got 75% more views. Sample is only 3 posts, but it matches every ai.with.andrew video (42-61 s). Our daily video is ~26 s. Test: longer 45-60 s version on some days.
+DATA POINT (Nathan's own FACEBOOK business dashboard, 24 Oct; corrected, it is not TikTok): 3 reels: 1 at 30-45 s, 2 at 45-60 s. TikTok says 45-60 s reels got 75% more views. Sample is only 3 posts, but it matches every ai.with.andrew video (42-61 s). Our daily video is ~26 s. Test: longer 45-60 s version on some days (Facebook first; TikTok/IG unverified).
+
+STATUS 24 Oct: W10-W20 added to the live Pick Recipe rotation (W14-W20 as text recipes: mechanism diagram, real change news hook, one image per line, POV loop, biggest mistake, cancel the paid tool, question owners ask). Diagram video scene and 45-60 s variant NOT built yet.
