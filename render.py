@@ -234,7 +234,12 @@ def render_daily(d):
     if aud:
         adur = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', aud]).decode().strip())
     words = [max(len(s.split()), 3) for s in segs]
-    T = max(adur + 1.0, 18.0) if aud else min(max(16.0, sum(words) * 0.34 + len(segs) * 0.7), 42.0)
+    if aud:
+        T = max(adur + 1.0, 18.0)
+    elif d.get('long'):
+        T = min(max(46.0, sum(words) * 0.34 + len(segs) * 0.7), 58.0)
+    else:
+        T = min(max(16.0, sum(words) * 0.34 + len(segs) * 0.7), 42.0)
     durs = [T * w / sum(words) for w in words]
     wts = None
     al = align_words(aud, segs, T) if aud else None
@@ -299,7 +304,7 @@ def render_daily(d):
             print('added AI cutaway on hook')
         except Exception as e:
             print('ugc cutaway skipped:', e)
-    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud) and aud != 'music.wav', 'ai_clip': ai, 'hook_style': d.get('hookStyle'), 'point_style': d.get('pointStyle'), 'hook_bg': bool(d.get('hook_bg')), 'word_synced': bool(wts)}, open('out/meta.json', 'w'))
+    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud) and aud != 'music.wav', 'ai_clip': ai, 'hook_style': d.get('hookStyle'), 'point_style': d.get('pointStyle'), 'hook_bg': bool(d.get('hook_bg')), 'long': bool(d.get('long')), 'word_synced': bool(wts)}, open('out/meta.json', 'w'))
     print('rendered', T)
 
 if __name__ == '__main__':
