@@ -66,6 +66,24 @@ def path_of(r):
     if isinstance(x, dict): x = x.get('path')
     return x
 
+_KOKORO = None
+class SwitchVoice(Exception): pass
+_vf = os.path.join(DIR, 'voice.txt')
+ENGINE = [open(_vf).read().strip() if os.path.exists(_vf) else os.environ.get('VOICE_ENGINE', 'gemini')]
+def kokoro_line(text, path):
+    # open-source Kokoro (Apache-2.0, commercial use OK), runs on the CPU of the GitHub runner
+    global _KOKORO
+    import soundfile as sf
+    if _KOKORO is None:
+        from kokoro_onnx import Kokoro
+        rel = 'https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/'
+        for f, u in (('kokoro.onnx', rel + 'kokoro-v1.0.int8.onnx'), ('voices.bin', rel + 'voices-v1.0.bin')):
+            if not os.path.exists(f): urllib.request.urlretrieve(u, f)
+        _KOKORO = Kokoro('kokoro.onnx', 'voices.bin')
+    v = os.environ.get('KOKORO_VOICE', 'am_michael')
+    a, sr = _KOKORO.create(text, voice=v, speed=1.05, lang='en-gb' if v.startswith('b') else 'en-us')
+    sf.write(path, a, sr)
+
 def voice_line(i, text):
     out = os.path.join(DIR, 'line%d.wav' % i)
     if os.path.exists(out): return out
@@ -75,19 +93,20 @@ def voice_line(i, text):
               api_name='/generate_tts_audio')
         shutil.copy(path_of(r), out + '.tmp.wav')
     else:
-        last = None
-        for _ in range(4):
-            try:
+        ok = False
+        if ENGINE[0] == 'gemini':
+            try:  # free tier is 10 requests/day: one try, then fall back
                 req = urllib.request.Request(TTS_URL, data=json.dumps({'text': text, 'voice': os.environ.get('VOICE', 'Charon')}).encode(),
                                              headers={'Content-Type': 'application/json'})
                 d = json.load(urllib.request.urlopen(req, timeout=150))
                 if d.get('audio_b64'):
-                    open(out + '.tmp.wav', 'wb').write(base64.b64decode(d['audio_b64'])); break
+                    open(out + '.tmp.wav', 'wb').write(base64.b64decode(d['audio_b64'])); ok = True
             except Exception as e:
-                last = e
-            time.sleep(15)
-        else:
-            raise RuntimeError('tts failed %s' % last)
+                print('gemini voice unavailable, using Kokoro:', str(e)[:80])
+            if not ok:
+                raise SwitchVoice()
+        if not ok:
+            kokoro_line(text, out + '.tmp.wav')
     # 48k mono, trimmed silence, short gap after each line
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', out + '.tmp.wav', '-af',
                     'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,apad=pad_dur=0.2,loudnorm=I=-16:TP=-1.5',
@@ -150,7 +169,15 @@ def build_segments():
 
 done = True
 try:
-    SEGS = build_segments()
+    try:
+        SEGS = build_segments()
+    except SwitchVoice:
+        # one voice per video: redo every line with Kokoro
+        ENGINE[0] = 'kokoro'
+        for f in os.listdir(DIR):
+            if f.startswith(('line', 'seg')): os.remove(os.path.join(DIR, f))
+        SEGS = build_segments()
+    open(_vf, 'w').write(ENGINE[0])
 except Exception as e:
     print('voice step failed:', str(e)[:300]); SEGS = []; done = False
 for i, text in enumerate(SEGS):

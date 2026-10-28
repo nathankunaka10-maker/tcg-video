@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
-      - run: pip install gradio_client
+      - run: pip install gradio_client kokoro-onnx soundfile
       - run: python ugc_talk.py
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
