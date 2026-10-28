@@ -100,3 +100,38 @@ W20 Reddit-post carousel (AI3E)
 DATA POINT (Nathan's own FACEBOOK business dashboard, 24 Oct; corrected, it is not TikTok): 3 reels: 1 at 30-45 s, 2 at 45-60 s. TikTok says 45-60 s reels got 75% more views. Sample is only 3 posts, but it matches every ai.with.andrew video (42-61 s). Our daily video is ~26 s. Test: longer 45-60 s version on some days (Facebook first; TikTok/IG unverified).
 
 STATUS 24 Oct: W10-W20 added to the live Pick Recipe rotation (W14-W20 as text recipes: mechanism diagram, real change news hook, one image per line, POV loop, biggest mistake, cancel the paid tool, question owners ask). Diagram video scene and 45-60 s variant NOT built yet.
+
+=== BATCH 28 Oct (20 videos + 80-hooks carousel). Visual analysis only (audio not transcribed). NOT live until Nathan says "add winners". ===
+
+W21 Split-screen proof hook (@pattalkstech, 35s): top = two near-identical videos with 37.5M vs 414 views, then face talking "this one got way more... it's not about the hashtags". Then screen recording of an AI agent analysing the post ("choose the analysis feature", "what went wrong and how to give it another shot"), CTA "Comment AGENT".
+- Pattern: two numbers side by side = instant curiosity ("same thing, 90,000x difference"). Ours (text-only): two audits/forms side by side, "same site, 2 enquiries vs 40". Only with REAL numbers from our own audits, never invented.
+
+W22 Skit-clip + method reveal (@productivecami1, 3 videos, 30s): borrowed viral skit (kid asks millionaire in a Lamborghini "how") with big word-by-word captions on the clip, small reaction cut-out bottom-left, then screen recording of the tool (Higgsfield plugin in ChatGPT, kids YouTube channel monetised), CTA "comment X to learn more".
+- Pattern: story fragment first, the method second. We cannot reuse others' footage. Ours: a 3-line text dialogue scene ("Owner: I need more enquiries. Me: What happens when someone fills your form? Owner: ...") then the real fix.
+
+W23 Hook-labelled clips (@erika.prompts, "THIS is a DANGER / ANTICIPATION / IMPOSSIBLE hook", "50+ hooks, comment HOOKS"): each clip gets a hook-type title card then the stunt. Series format = saveable, one per hook type.
+- Ours: series "THIS is a [stakes/curiosity/labeling] hook" showing our own hook lines on screen. Fits the diagram/kinetic scenes. Series name is ours, never theirs.
+
+W24 Fear-then-process (@therealisaacblake, "I just got VERY RICH with Claude and I'm kinda scared"): fixed top caption through the whole video, dark face shot, then screen recording "pick your favorite idea". Income claim = unverified, we must NOT copy the claim style. Shape only: emotional one-liner fixed on top + proof on screen.
+
+W25 Rhythm labels (@viralrolloutlabs): overlays "Better / Good / Best" with sliders on how a line is delivered, then screen of a coaching script ("FLOW"). Teaches by contrast: same line, 3 versions. We already have "same line five versions" recipe; use the slider overlay for it.
+
+W26 A/B "How I would present it vs How you would present it" (@itiss.joao): same speaker, two labelled versions on one screen. Ours: "How most sites present it vs how I would" with two text cards.
+
+W27 "Bro just pulled out $10k mid lecture" (@total_hustle, 32s): story caption fixed at top for the whole video, then real screen recording: ChatGPT → coloring book idea → Amazon listing at $7 → "at least 22,000 copies". Pattern = absurd scene as the hook + screen proof. Earnings claims are third-party and unverifiable; do NOT use. Ours: absurd-but-true scene about a form that sits unanswered over a weekend.
+
+W28 Whiteboard infographic over face (@haroonkhaans, agency series "part 51"): white infographic panels (steps, arrows, 1-3% vs 10-15% reply-rate icons) over the speaker; numbered "step number one". Directly matches our diagram scene. Series numbering ("part 52") builds a binge habit. His "unethical ways" framing is not ours.
+
+W29 Retention tricks (@robertmckeaveney, "Use this in your videos to FORCE people to watch for longer"): cutaway b-roll every ~2s on the spoken line, "POV: the greatest transition ever" prop transition, tags. Ours: a change of scene on every line (already in kinetic), plus one pattern interrupt around 60% mark.
+
+W30 Direct-to-camera "text me X and it generates" (@barin.darcan): face + word captions, one tool shown. Face parked; skip.
+
+HOOK BANK (topicfinder 80-hook carousel, 8 categories). Use the CATEGORIES, our own wording, niche = websites that lose enquiries:
+- Stakes: "You're one slow reply away from losing a £5,000 job." "Don't redesign your site until you can answer these 3 questions."
+- Contrarian: "Your website isn't broken. Your first line is." "A new design won't fix your enquiries."
+- Curiosity gap: "Why do tiny agents beat big firms at getting enquiries?" "The one thing on your site every competitor ignores."
+- Story lead-in: "I audited 190 sites. Same mistake on most of them." (real stat from the feed)
+- Labeling: "If your contact form has 7 fields, you're losing the lead." "If you only reply on Monday, you're the slow one."
+- Signaling: "If you run an estate agency website, this one's for you."
+- Framework: "The 2-minute rule for enquiries." "3 things decide if a visitor messages you."
+- Authority (only with real facts): "After auditing 190 sites, this is the one fix I'd make first."
