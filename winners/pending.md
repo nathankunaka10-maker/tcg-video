@@ -135,3 +135,21 @@ HOOK BANK (topicfinder 80-hook carousel, 8 categories). Use the CATEGORIES, our 
 - Signaling: "If you run an estate agency website, this one's for you."
 - Framework: "The 2-minute rule for enquiries." "3 things decide if a visitor messages you."
 - Authority (only with real facts): "After auditing 190 sites, this is the one fix I'd make first."
+
+BATCH 28 Oct part 2 (about 45 more videos + aperturemotion profile screenshots). Visual analysis only. NOT live until "add winners".
+
+W31 TOP PRIORITY: animated comparison charts (@aperturemotion, media agency, "We make businesses easy to understand", DM "VIDEO"). Profile: only 8 posts, 2.8K followers, but reels at 619K, 429K, 357K, 234K, 144K views (others 2-11K: the weak ones are the text-heavy ones, the strong ones are ONE big animated visual). Formats: dark background, one 3D bar vs another ($3,000,000 vs $9,310; +27% vs +1,106%), a falling/rising line chart with start and end price, wrecking ball into a wall with a frame counter, "Two friends each invest $200" split of two phone screens. One idea, one number comparison, tiny label under each bar, 1 line of caption.
+- Ours, buildable in our engine: a "bar duel" scene (two bars growing, numbers counting up, labels underneath, glow on the winner). Content must be REAL numbers: e.g. our feed stats (websites audited / emails sent / leads found), or a sourced stat about response speed with the source on screen. Never invented results. Build as a new scene type "bars" next to diagram/meter.
+- Lesson for the account: strong posts = one visual idea; weak posts = dense text.
+
+W32 Flow-diagram overlay on a live demo (@arin.darcan voice-agent calls): while a real call plays, a node flow (Greeting > Service check > Project scope > Pricing > Wrap up) lights up step by step on top of the video. This is exactly our diagram scene; confirms the idea. Ours: "enquiry flow" nodes lighting up (Form submitted > Auto-reply > Owner pinged > Booked).
+
+W33 Fixed top caption for the whole video (@uiluxnxk "Claude cooked", @therealisaacblake, @total_hustle): one framing line stays at top while the visuals change. Cheap retention device. Ours: keep the hook line pinned top for the whole video in kinetic/diagram styles (not built yet).
+
+W34 Keyword-comment CTA end card everywhere (STACK, SKILL, BUILDS, HOOKS, AGENT, VIDEO...): one word, big, on a dark end card with the platform logo; offers a free thing "I'll send you X". Ours already uses "Comment AUDIT". Keep ONE word per video, make the free thing concrete.
+
+W35 "Tool can't do X until you add this" + screen demo (@alextsoi_ai, @keeran.ai launch-video skill, @corbinsylk): claim sentence, then a 3-step on-screen process (type slash, paste, result), then keyword CTA. Ours: "Your form can't tell you it's slow until you add this" with real before/after of our audit.
+
+W36 Faceless slideshow growth story (@ryan.bartkiewicz "How my app got 100,000 downloads", @becca.on.brand "My Gen-Z intern showed me how she makes 100 marketing videos in 5 mins", @alexbsidhu "5 things I'd build with Claude"): number in the hook + process on screen. The faces are parked; the number-in-hook shape is fine but claims must be ours and true.
+
+SKIP: the "satisfying" cutting/ASMR clips (soap, kinetic sand, jelly, fruit, TikTok search-bar intro): pure loop-retention content with no business angle and not ours to reuse. Takeaway only: a TikTok-style search-bar opener and zero-text calm visuals loop well, but off-brand for an agency. Also the course-slide screenshot (Arno, "Get my writing file" link) and school/personal screenshots (maths-test emails, calendar, signature, marker search, meme) are not content recipes.
