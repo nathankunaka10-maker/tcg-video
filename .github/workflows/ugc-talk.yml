@@ -1,0 +1,57 @@
+name: ugc-talk
+# AI UGC talking video of Nathan. Manual start with a script; a daily run finishes unfinished jobs
+# when the free ZeroGPU quota ran out mid-way. Never posts anything.
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Job name (folder under assets/talk). Empty = new job dated today, or resume newest unfinished'
+        required: false
+        default: ''
+      script:
+        description: 'JSON list of spoken lines (2 lines per 7.5 s segment). Empty = default enquiry script'
+        required: false
+        default: ''
+      voice_ref:
+        description: 'Optional public URL of a 10-20 s clean recording of Nathan speaking (clones his voice with Chatterbox)'
+        required: false
+        default: ''
+  schedule:
+    - cron: '20 1 * * *'
+permissions:
+  contents: write
+concurrency:
+  group: ugc-talk
+  cancel-in-progress: false
+jobs:
+  talk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - run: pip install gradio_client
+      - run: python ugc_talk.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          JOB: ${{ inputs.job }}
+          SCRIPT: ${{ inputs.script }}
+          VOICE_REF: ${{ inputs.voice_ref }}
+          RESUME_ONLY: ${{ github.event_name == 'schedule' && '1' || '' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: talk-${{ github.run_id }}
+          path: assets/talk/
+          if-no-files-found: ignore
+      - name: commit progress
+        run: |
+          git config user.name tcg
+          git config user.email tcg@users.noreply.github.com
+          git add assets/talk
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -qm "ugc talk progress $(date -u +%F)"
+          git pull -q --rebase
+          git push
