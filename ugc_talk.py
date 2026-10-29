@@ -114,9 +114,25 @@ def voice_line(i, text):
     os.remove(out + '.tmp.wav')
     return out
 
+# camera-facing clips from the existing AI clip bank of Nathan (mouth visible, no props in front of the face)
+BANK = ['bank_typing.mp4', 'ugc_20261025_0.mp4', 'ugc_20261028_3.mp4']
+
+def pingpong(src, seconds, out):
+    # forward, reversed, forward... until the clip covers the audio; drop the last 0.3 s of tail artefacts
+    d = dur(src) - 0.3
+    n = int(seconds // (2 * d)) + 1
+    chain = '[0:v]trim=0:%.2f,setpts=PTS-STARTPTS,fps=25,split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1[p];' % d
+    chain += '[p]' + ('split=%d' % n + ''.join('[p%d]' % k for k in range(n)) + ';' + ''.join('[p%d]' % k for k in range(n)) + 'concat=n=%d:v=1' % n if n > 1 else 'null') + '[v]'
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', src, '-filter_complex', chain, '-map', '[v]', '-t', '%.2f' % (seconds + 0.2),
+                    '-r', '25', '-c:v', 'libx264', '-crf', '18', '-pix_fmt', 'yuv420p', '-an', out], check=True)
+
 def motion(i, seconds):
     out = os.path.join(DIR, 'seg%d_raw.mp4' % i)
     if os.path.exists(out): return out
+    if os.environ.get('MOTION', 'bank') == 'bank':
+        # free GPU quota is ~3.5 min/day: reuse an existing clip so only lip-sync needs the GPU
+        pingpong(os.path.join('assets', 'ugc', BANK[i % len(BANK)]), seconds, out)
+        return out
     c = client('zerogpu-aoti/wan2-2-fp8da-aoti-faster')
     want = min(5.0, round(seconds + 0.3, 1))
     try:
