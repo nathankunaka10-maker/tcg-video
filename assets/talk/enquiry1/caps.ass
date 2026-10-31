@@ -1,0 +1,25 @@
+[Script Info]
+PlayResX: 1080
+PlayResY: 1920
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Shadow, Alignment, MarginV
+Style: Cap,DejaVu Sans,74,&H00FFFFFF,&H00000000,&H64000000,1,1,6,0,2,560
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.15,0:00:01.11,Cap,,0,0,0,,MOST ESTATE AGENTS
+Dialogue: 0,0:00:01.11,0:00:02.08,Cap,,0,0,0,,REPLY TO A
+Dialogue: 0,0:00:02.08,0:00:03.04,Cap,,0,0,0,,NEW ENQUIRY THE
+Dialogue: 0,0:00:03.04,0:00:04.01,Cap,,0,0,0,,NEXT DAY. BY
+Dialogue: 0,0:00:04.01,0:00:04.97,Cap,,0,0,0,,THEN THE RENTER
+Dialogue: 0,0:00:04.97,0:00:05.94,Cap,,0,0,0,,HAS ALREADY BOOKED
+Dialogue: 0,0:00:05.94,0:00:06.90,Cap,,0,0,0,,THREE OTHER VIEWINGS.
+Dialogue: 0,0:00:07.19,0:00:08.02,Cap,,0,0,0,,SO I BUILT
+Dialogue: 0,0:00:08.02,0:00:08.86,Cap,,0,0,0,,A SYSTEM THAT
+Dialogue: 0,0:00:08.86,0:00:09.69,Cap,,0,0,0,,REPLIES IN UNDER
+Dialogue: 0,0:00:09.69,0:00:10.53,Cap,,0,0,0,,TWO MINUTES DAY
+Dialogue: 0,0:00:10.53,0:00:11.36,Cap,,0,0,0,,OR NIGHT. COMMENT
+Dialogue: 0,0:00:11.36,0:00:12.20,Cap,,0,0,0,,AUDIT AND I'LL
+Dialogue: 0,0:00:12.20,0:00:13.03,Cap,,0,0,0,,SHOW YOU WHERE
+Dialogue: 0,0:00:13.03,0:00:13.87,Cap,,0,0,0,,YOUR ENQUIRIES LEAK.
