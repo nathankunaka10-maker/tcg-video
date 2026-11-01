@@ -2,9 +2,16 @@ name: product-factory
 on:
   workflow_dispatch:
     inputs:
-      count: {description: 'how many products', default: '1'}
-      niche: {description: 'A=real estate kits, B=AI/business toolkits, C=planners, empty=rotate', default: ''}
-      dry_run: {description: 'build only, do not publish', type: boolean, default: false}
+      count:
+        description: 'how many products'
+        default: '1'
+      niche:
+        description: 'A=real estate kits, B=AI/business toolkits, C=planners, empty=rotate'
+        default: ''
+      dry_run:
+        description: 'build only, do not publish'
+        type: boolean
+        default: false
   schedule:
     - cron: '17 4 * * *'
 permissions:
@@ -16,7 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
+        with:
+          python-version: '3.12'
       - run: sudo apt-get update && sudo apt-get install -y poppler-utils fonts-inter fonts-dejavu-core
       - run: pip install reportlab openpyxl pillow
       - run: python product_factory.py
@@ -28,4 +36,7 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
       - uses: actions/upload-artifact@v4
         if: always()
-        with: {name: products-${{ github.run_id }}, path: pout/, if-no-files-found: ignore}
+        with:
+          name: products-${{ github.run_id }}
+          path: pout/
+          if-no-files-found: ignore
