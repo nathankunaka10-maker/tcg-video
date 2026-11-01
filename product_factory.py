@@ -462,6 +462,7 @@ def clean_tags(tags):
     for t in tags:
         t = re.sub(r'[^a-z0-9 ]', '', str(t).lower()).strip()
         while len(t) > 20 and ' ' in t: t = t.rsplit(' ', 1)[0]
+        while t.split() and t.split()[-1] in ('for', 'and', 'of', 'the', 'a', 'to', 'in', 'with', 'my'): t = t.rsplit(' ', 1)[0] if ' ' in t else ''
         if 2 < len(t) <= 20 and t not in out: out.append(t)
     return out[:8]
 
