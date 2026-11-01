@@ -118,12 +118,21 @@ Avoid anything too close to these existing products: {existing or 'none'}.
 For each candidate capture the buyer's REAL words (from reviews/questions you found): their current-state frustration, dream state and the roadblock the product removes, and do a top-player analysis of the best-selling competitor (what mechanism makes it sell, and its 1-3 star review complaints to beat).
 Give 6 candidates and pick the best by: proven demand evidence, narrowness, can be delivered well as a PDF kit plus an Excel/Google Sheets tracker, fair price, low competition.
 Return ONLY JSON: {{"candidates":[{{"idea":"","buyer":"","job":"","evidence":"what you saw that proves demand, with source names/URLs","competition":"","price_eur":0,"score":0}}],"pick":{{"idea":"","buyer":"","job":"","why":"","evidence":"","buyer_words":"","competitor_mechanism":"","complaints_to_beat":"","price_eur":0}}}}"""
-    txt = gemini(prompt, SYSTEM, want_json=False, search=True, temp=0.6)
-    m = re.search(r'\{[\s\S]*\}', txt)
-    try:
-        return json.loads(m.group(0))
-    except Exception:
-        return gemini('Convert this to the JSON format it describes, return only JSON:\n' + txt[:12000], want_json=True)
+    for attempt in range(3):
+        txt = gemini(prompt, SYSTEM, want_json=False, search=True, temp=0.6)
+        m = re.search(r'\{[\s\S]*\}', txt or '')
+        try:
+            res = json.loads(m.group(0))
+        except Exception:
+            try:
+                res = gemini('Convert this to the JSON format it describes, return only JSON:\n' + (txt or '')[:12000], want_json=True)
+            except Exception:
+                res = {}
+        pick = (res or {}).get('pick') or ((res or {}).get('candidates') or [{}])[0]
+        if pick.get('idea') and pick.get('buyer'):
+            res['pick'] = pick; return res
+        print('research returned no usable pick, retrying', attempt + 1)
+    raise RuntimeError('research gave no usable pick after 3 tries')
 
 
 SPEC_SCHEMA = """{
@@ -133,7 +142,7 @@ SPEC_SCHEMA = """{
  "price_eur": 9,
  "summary": "<=140 chars, the 'you get' line",
  "audience": "who exactly",
- "tags": ["8 lowercase buyer search phrases"],
+ "tags": ["8 lowercase buyer search phrases, each max 20 characters"],
  "description_paragraphs": ["3 short paragraphs: the problem, what this kit does, who it is for"],
  "included": ["5-8 bullet lines describing what is inside"],
  "benefits": ["4-6 concrete outcomes"],
@@ -448,6 +457,15 @@ def qa(spec, pdf_path, xlsx_path, n_pages, n_tabs):
 
 
 # ---------------------------------------------------------------- publish
+def clean_tags(tags):
+    out = []
+    for t in tags:
+        t = re.sub(r'[^a-z0-9 ]', '', str(t).lower()).strip()
+        while len(t) > 20 and ' ' in t: t = t.rsplit(' ', 1)[0]
+        if 2 < len(t) <= 20 and t not in out: out.append(t)
+    return out[:8]
+
+
 def push_assets(folder, slug):
     """Commit marketing images to the public product-assets branch; return raw base URL."""
     wt = 'assets_wt'
@@ -505,7 +523,7 @@ def publish(spec, zip_path, base_url, niche_key):
     file_url = upload_file(zip_path)
     data = {'name': spec['title'][:90], 'description': desc, 'price': int(round(float(spec.get('price_eur', 9)) * 100)),
             'price_currency_type': 'eur', 'custom_summary': spec.get('summary', '')[:150],
-            'custom_permalink': slugify(spec['title'])[:40], 'files[][url]': file_url, 'tags[]': spec.get('tags', [])[:8]}
+            'custom_permalink': slugify(spec['title'])[:40], 'files[][url]': file_url, 'tags[]': clean_tags(spec.get('tags', []))}
     cat = pick_category(NICHES[niche_key][2])
     if cat: data['category'] = cat
     r = gum('/products', data)
