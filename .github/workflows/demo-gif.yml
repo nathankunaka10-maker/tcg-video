@@ -1,0 +1,42 @@
+name: demo-gif
+on:
+  workflow_dispatch:
+    inputs:
+      slugs:
+        description: 'space-separated slugs (empty = latest from n8n)'
+        required: false
+        default: ''
+  schedule:
+    - cron: '10 7,12 * * *'
+permissions:
+  contents: write
+jobs:
+  gif:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: get existing demos branch
+        run: |
+          mkdir -p demos
+          if git fetch origin demos:demos 2>/dev/null; then git --work-tree=demos checkout demos -- . ; git reset -q; fi
+          ls demos | head
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pip install playwright && playwright install --with-deps chromium
+      - run: python demo_gif.py
+        env:
+          SLUGS: ${{ inputs.slugs }}
+      - name: publish
+        run: |
+          cd demos
+          ls | head
+          git init -q
+          git checkout -q -b demos
+          git config user.name tcg
+          git config user.email tcg@users.noreply.github.com
+          git add .
+          git commit -qm "demos $(date -u +%F-%H%M)" || exit 0
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" demos
