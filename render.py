@@ -155,6 +155,19 @@ async def snap(template, data, T, transparent):
         await pg.goto('file://' + os.path.abspath(template))
         await pg.evaluate('setData(%s)' % json.dumps(data))
         await pg.wait_for_timeout(400)
+        # readability gate: words touching / overflowing / too small -> fall back to the safe layout
+        qa = await pg.evaluate('window.__qa || []')
+        if qa and isinstance(data, dict) and 'd' in data:
+            print('readability QA failed, switching to safe layout:', qa)
+            d2 = data['d']
+            if d2.get('hookStyle') == 'kinetic': d2['hookStyle'] = 'classic'
+            if d2.get('pointStyle') == 'kinetic': d2['pointStyle'] = 'cards'
+            d2['kinetic'] = False
+            await pg.goto('file://' + os.path.abspath(template))
+            await pg.evaluate('setData(%s)' % json.dumps(data))
+            await pg.wait_for_timeout(400)
+        else:
+            print('readability QA passed')
         for i in range(int(FPS * T)):
             await pg.evaluate('setT(%f)' % (i / FPS))
             if transparent:
