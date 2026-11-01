@@ -159,6 +159,8 @@ Buyer's own words: {pick.get('buyer_words')}
 Top competitor's selling mechanism (beat it, don't copy the surface): {pick.get('competitor_mechanism')}
 Complaints in competitors' 1-3 star reviews to fix: {pick.get('complaints_to_beat')}
 Fill "wwp" FIRST, then write every listing element (title, summary, description, included, benefits) to trigger the mind steps in order, in the buyer's words. Title = buyer identity + concrete result (search-friendly, no hype). First description paragraph names their current-state pain in their words; second shows the relief and exactly how the kit delivers it; third removes the main objection.
+DEPTH (buyers judge value by how full and specific it is): guide pages have 4-6 sections, each body 4-6 sentences of concrete know-how with numbers/examples; every checklist has 3-5 groups of 5-8 items; scripts have 4-6 blocks; templates have 10-16 fields; worksheets have 8-12 prompts; trackers have 5-7 columns.
+HONESTY (trust threshold, and refunds kill Gumroad accounts): "included", "benefits" and "how_to_use" may ONLY describe pages that exist in "pages" plus "an .xlsx spreadsheet (opens in Excel, Google Sheets or Numbers) with one tab per tracker, totals pre-built". Never promise links, apps, dashboards, one-click exports, automation, videos, bonuses, legal/tax/financial guarantees or anything not in the files. Tax/legal content says to confirm with a professional.
 Rules: 8 to 12 pages total, every page must be immediately usable by this buyer, at least 2 tracker pages (they become spreadsheet tabs), include a 'guide' page with real know-how and at least one checklist. Use realistic example rows. Price in EUR between 7 and 39 depending on value (business kits 15-39, consumer planners 7-15). Currency examples in EUR, dates as DD/MM/YYYY.
 Return ONLY JSON matching this schema:
 {SPEC_SCHEMA}"""
@@ -167,7 +169,7 @@ Return ONLY JSON matching this schema:
 
 def grade(spec):
     prompt = (TRW + "\nYou are a strict buyer and a TRW marketing professor reviewing a student's product. Score 1-10 for each: usefulness to the stated buyer, "
-              "specificity (not generic), accuracy (no false or risky claims), completeness (pages actually usable), sellability at its price, "
+              "specificity (not generic), accuracy (no false or risky claims; ANY promised feature/file/link/dashboard/export not actually present in pages = accuracy max 4), completeness (7-11 content pages; guides 4-6 sections of 4-6 sentences; checklists 15+ items; scripts 4+ blocks; templates 10+ fields; worksheets 8+ prompts; ANY miss = completeness max 5), completeness (pages actually usable), sellability at its price, "
               "trw_copy (WWP done properly, buyer's words, leads with identity/pain, all three thresholds raised, no hype, one clear message). "
               "Then overall = the minimum of the six. List concrete fixes. Return ONLY JSON {\"scores\":{...},\"overall\":0,\"fixes\":[\"...\"]}.\n\n"
               + json.dumps(spec)[:30000])
@@ -423,8 +425,25 @@ def qa(spec, pdf_path, xlsx_path, n_pages, n_tabs):
     if len(spec.get('title', '')) > 90: issues.append('title too long')
     txt = json.dumps(spec)
     if '—' in txt or '–' in txt: issues.append('em dash')
-    if re.search(r'lorem ipsum|\bTODO\b|\[insert', txt, re.I): issues.append('placeholder text')
-    if os.path.getsize(pdf_path) < 15000: issues.append('PDF suspiciously small')
+    listing = json.dumps({k: v for k, v in spec.items() if k != 'pages'})
+    if re.search(r'lorem ipsum|\bTODO\b', txt, re.I) or re.search(r'\[insert|\[your', listing, re.I): issues.append('placeholder text')
+    try:
+        words = len(subprocess.run(['pdftotext', pdf_path, '-'], capture_output=True, text=True).stdout.split())
+    except Exception:
+        words = 9999
+    if words < 1200: issues.append(f'thin content: {words} words')
+    pg = spec.get('pages', [])
+    if len(pg) < 7: issues.append(f'only {len(pg)} content pages (need 7-11)')
+    for p in pg:
+        t = p.get('type')
+        if t == 'guide' and len(p.get('sections', [])) < 4: issues.append(f"guide '{p.get('title')}' has <4 sections")
+        if t == 'checklist' and sum(len(g.get('items', [])) for g in p.get('groups', [])) < 15: issues.append(f"checklist '{p.get('title')}' has <15 items")
+        if t == 'script' and len(p.get('blocks', [])) < 4: issues.append(f"script '{p.get('title')}' has <4 blocks")
+        if t == 'template' and len(p.get('fields', [])) < 10: issues.append(f"template '{p.get('title')}' has <10 fields")
+        if t == 'worksheet' and len(p.get('prompts', [])) < 8: issues.append(f"worksheet '{p.get('title')}' has <8 prompts")
+    claims = ' '.join(spec.get('included', []) + spec.get('how_to_use', []) + spec.get('benefits', []))
+    bad = re.findall(r'one-click|dashboard|link (?:inside|in the|below)|automatic(?:ally)? (?:calculat|sync|import)|video|bonus|guarantee', claims, re.I)
+    if bad: issues.append('promises missing features: ' + ', '.join(sorted(set(b.lower() for b in bad))))
     return issues
 
 
@@ -542,6 +561,18 @@ def make_one(niche_key, existing):
     with zipfile.ZipFile(zpath, 'w', zipfile.ZIP_DEFLATED) as z:
         z.write(pdf, os.path.basename(pdf)); z.write(xlsx, os.path.basename(xlsx))
     print('built', slug, 'pages', n_pages, 'tabs', n_tabs, 'issues', issues)
+    if issues:
+        fixes = ['Fix QA failure: ' + i for i in issues] + ['Make every page full: 7-11 content pages, guides 4-6 sections x 4-6 sentences, checklists 15+ items, scripts 4+ blocks, templates 10+ fields, worksheets 8+ prompts, all specific and expert', 'Remove every claim in included/benefits/how_to_use that the files do not deliver']
+        spec = revise(spec, fixes); g2 = grade(spec); print('qa-revise grade', g2.get('overall'))
+        if (g2.get('overall') or 0) >= 8: g = g2
+        n_pages = build_pdf(spec, pdf); n_tabs = build_xlsx(spec, xlsx)
+        imgs = build_images(spec, pdf, folder)
+        issues = qa(spec, pdf, xlsx, n_pages, n_tabs)
+        if (g.get('overall') or 0) < 8: issues.append(f"grade {g.get('overall')} after QA revise")
+        json.dump({'spec': spec, 'grade': g, 'research': res}, open(os.path.join(folder, 'spec.json'), 'w'), indent=1)
+        with zipfile.ZipFile(zpath, 'w', zipfile.ZIP_DEFLATED) as z:
+            z.write(pdf, os.path.basename(pdf)); z.write(xlsx, os.path.basename(xlsx))
+        print('rebuilt pages', n_pages, 'tabs', n_tabs, 'issues', issues)
     if issues:
         log({'status': 'qa_failed', 'title': spec['title'], 'niche': niche_key, 'score': g.get('overall'), 'note': '; '.join(issues)}); return None
     if DRY or not TOKEN:
