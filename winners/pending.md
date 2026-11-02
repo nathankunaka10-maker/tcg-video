@@ -166,3 +166,15 @@ W40 Pinned top 3 = best proof; his reels are re-used as the profile's sales page
 Lesson: face reels flop here (4-9K). Keep face parked; invest in the showcase visual.
 
 STATUS 1 Nov: W21-W40 added to the live Pick Recipe rotation (6 text recipes inserted from tomorrow: bar duel comparison, split proof two versions, skit then method, verdict line plus proof, ai without sounding like ai, x cannot tell you until) plus 10 new first-line hook templates from the hook bank. Built: bars scene (stats scene is now 3 growing bars with count-up, real feed numbers; statsStyle 'tiles' restores the old tiles) and a pinned top caption (hook shown at top from scene 2 to the end; D.pin=false turns it off). W37 showcase reels wait until Nathan has a real finished client project to show.
+
+## W41 - Character metaphor explainer (@howtohireai, 1 Nov)
+Source: reel DfChUN4OhsW (21.6K likes, 482 shares). Profile: 4 posts, 1,206 followers, reels 354K / 80.3K / 32.8K / 1.8K views. Tiny account, big reach = format is carrying it, not the following.
+What it is: faceless 3D cartoon robot (terminal-prompt screen head, suit, red tie) at a desk. One abstract thing (AI doing your admin) shown as a tiny story, no talking head.
+Beats seen: red counter "187 unread" -> drops to "2 unread" (the result as a number on screen) -> alarm clock = "scheduled task" label pill -> robot drafts replies on the monitor -> "Waiting for your yes" queue (Reply to Sam/Alex/Jo) -> payoff: the owner on a beach gets one prompt "Send reply to Sam? Yes / No".
+Why it works: (1) one metaphor, one object per beat, (2) numbers on screen change = proof without claims, (3) big one-word-at-a-time captions keep eyes locked, (4) the payoff is the human staying in control (approval step) which kills the fear, (5) beach payoff = the dream outcome shown, not said. Scene cuts every 2-3s with camera moves, not constant explosions.
+Other 3 reels reuse the same character + beach payoff (series IP). Another uses a flat diagram "Claude -> Kapso -> WhatsApp official API" (low views 1.8K = diagrams alone are weaker than the character story).
+Ours (free tools only, true claims only):
+- Recipe "enquiry inbox story": counter scene (e.g. "enquiries waiting" number falling) + label pills + approval payoff "Reply to the lead? Yes / No" using our existing template, simple flat character/icon instead of 3D.
+- Add to template: a "counter" scene (big red/cyan number that ticks down) and a "label pill" element. Reuse the pinned caption.
+- Rule: no invented client numbers; counter shows a real process number or is clearly an illustration.
+Status: card only. Goes live on "add winners"/"add rotation".
