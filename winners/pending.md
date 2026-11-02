@@ -199,3 +199,11 @@ W48 Before/after courier case (1.3K): "Same task. One took a month. One took a d
 W49 Weak ones: Friday leak list, 5 illegal things, haunted building, Tesla = generic pain list or novelty without payoff; 1-3K.
 W50 Comment-bait CTA: asks "comment AUDIT" / "comment your score" / "be honest in the comments"; commenters are mostly few repeat accounts (same 3-4 names) = small real engagement, so the 211K/144K reach did not become a visible lead flow (504 followers).
 Ours: bait-and-switch only with a GENUINE hook fact and a pivot that is honest, no deception about what is being sold; comment keyword CTA stays our existing one.
+
+## W51 - Danger-in-frame-1 short (@youneszarou, 2 Nov) - PARTIAL (only first frame seen, Chrome offline)
+Reel DfPN6BoRXKU: 21.6M views, 860K likes, 7.5K comments, 11.4s. Caption only "Thank you bro #yzfamily". Creator: 26.4M followers, VFX/stunt entertainer. His other recent reels: 0.9M-5.5M, so this is a ~5-20x outlier.
+Frame 1: man on a pink flamingo float on his phone, drifting at the edge of a Dubai rooftop infinity pool, skyline below. Danger is visible before anything happens.
+Comments: "My anxiety", "phobia", "I hate AI", "AI" (viewers believe/accuse it is AI/VFX) = tension + debate drive comments.
+Why it works: (1) the threat is in the very first frame, no setup, (2) 11s = rewatch/loop, (3) one-line caption, the video carries it, (4) "is it fake?" argument in comments boosts reach.
+Ours (not our niche, take the mechanics only): first frame must already show the problem at its worst moment (e.g. the lead about to go cold: "Unread 3 days" right at second 0), keep some reels ~10-12s for loops. NO fake/AI-looking stunts (our no-slop rule; "I hate AI" comments = brand risk for an AI agency).
+To finish: watch full 11s when Chrome is back (what happens + the "thank you bro" payoff).
