@@ -178,3 +178,14 @@ Ours (free tools only, true claims only):
 - Add to template: a "counter" scene (big red/cyan number that ticks down) and a "label pill" element. Reuse the pinned caption.
 - Rule: no invented client numbers; counter shows a real process number or is clearly an illustration.
 Status: card only. Goes live on "add winners"/"add rotation".
+
+## W42-W45 - @trytaskless.ai (Taskless AI, Toronto automation agency; 2 Nov)
+Same business as ours (automation agency, local, "DM AUDIT" free audit CTA). Profile: 21 posts, 504 followers. Reels grid: 211K, 144K, 16.2K, then 1-3K (2.5K, 2.2K, 2.0K, 1.9K, 2.0K, 1.3K, 1.1K, 0.9K). So ~3 of 12 reels carry everything; the rest are flat. Lesson: the hook is the whole game, the agency pitch is only the last 3 seconds.
+Format (all faceless, vertical, flat vector/dark UI, one-word/phrase caption pill at bottom with ONE highlighted word in gold/red, small mono-caps label top corner like "LIGHT PATH VISUALIZATION", "SCHEMATIC - TIME COMPRESSED"). Cuts every 2-3s, each shot = one concrete image.
+W42 Absurd-scale comparison hook (211K, reel DfER2bzxQJj, 6.1K likes, 71 shares): "8 billion lasers at Uranus. 6 hours round trip. Still faster than most businesses reply to a new lead." 8 billion people point lasers at Uranus -> beam spreads -> almost all misses -> payoff line ties to lead reply speed -> CTA in caption. Mechanism: weird true-sounding science fact as hook, pivot to business pain in the last line. Ours: absurd-fact hook + reply-speed pivot. Rule: every number must be checkable; label shots "schematic" like he does.
+W43 Military-strategy ad (144K, reel De0XsE4tDt8, 4.8K likes, comments "holy hook", "best hook ever", "imma steal this ad", "finally a watchable ad"): opens on desert tank/drone scene ("Military strategy has never been more advanced"), then QR codes, GTA map with city pins (Toronto, Vaughan), checklist ticks, CTA card "free automation audit - FREE". Mechanism: unrelated cinematic hook that people call an ad but watch anyway; local map shot = "we serve your area". Ours: unrelated vivid hook -> 2 beats -> "free audit" CTA card.
+W44 Local map shot: "Serving the GTA" map with pins. Ours: map with our real service area only if true; skip if not.
+W45 Short calendar/number pain visuals (e.g. "Every Friday your business loses money" calendar, "5 things that should be illegal to do by hand") = flat 1-2K views. Do NOT copy: generic pain statements without a strange hook do not travel.
+Not watched: the 16.2K "carved the same message" reel and the 4 low ones (grid only).
+Comments show the audience is other agency owners/marketers ("stealing the hook"), not buyers: reach is big, leads unproven (he has 504 followers). Keep our funnel measured on enquiries, not views.
+Ours, free: hook bank entry "absurd true fact -> business pivot", reuse bars/counter scenes; keep CTA = our existing one. Goes live on "add winners"/"add rotation".
