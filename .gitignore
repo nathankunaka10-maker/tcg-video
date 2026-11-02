@@ -1,3 +1,5 @@
 kokoro.onnx
 voices.bin
 pout/
+pod_out/
+pod_wt/
