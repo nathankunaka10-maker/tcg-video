@@ -218,6 +218,7 @@ def main():
                 s = sc.get(i, {})
                 print(key, s.get('score'), s.get('risk'), ' / '.join(d['lines']), '|', s.get('note'))
                 if (s.get('score') or 0) >= 8 and s.get('risk', 'none') == 'none':
+                    if key != 'tech_ai' and d.get('style') == 'terminal': d['style'] = 'stack'
                     d.update(niche=key, score=s.get('score')); picked.append(d)
         picked = picked[:count]
     rows, previews = [], []
