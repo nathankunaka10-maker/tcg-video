@@ -383,11 +383,23 @@ def render_ad(d):
         make_post_cover({'id': d['id'], 'title': (d['scenes'][0].get('caption') if d.get('scenes') else d.get('title')), 'cover_title': d.get('cover_title'), 'series': 'LEAD LEAK'}, bg='ad_bg.jpg')
     except Exception as e:
         print('ad cover failed:', e)
-    cap = human_caption(d, d['caption'])
+    cap = clean_caption(human_caption(d, clean_caption(d['caption'])))
     json.dump({'date': d['date'], 'id': d['id'], 'caption': cap, 'caption_l1': cap.split('\n')[0][:120], 'audio_mode': AM if voice or AM == 'music' else 'music', 'duration': T, 'narrated': bool(voice), 'mode': 'ad', 'mechanism': d.get('mechanism'), 'music': globals().get('MUSIC_USED'), 'cover': os.path.exists('out/cover.jpg')}, open('out/meta.json', 'w'))
     print('rendered ad', d.get('mechanism'), T)
 
 LABEL = re.compile(r'^\s*(?:\[?\s*(?:audio|vo|voice\s*over|voiceover|narrator|visual|on[- ]?screen(?: text)?|text overlay|overlay|caption|hook|cta|scene\s*\d*|slide\s*\d*|diagram|b-?roll|title)\s*\]?\s*[:\-\u2013]\s*)+', re.I)
+# Captions are prose, so only 'Label:' or 'Label - ' counts (keeps words like 'Visual-first').
+CAP_LABEL = re.compile(r'^\s*\[?\s*(?:audio|vo|voice\s*-?\s*over|narrator|visual|on[- ]?screen(?: text)?|text overlay|overlay|caption|hook|cta|scene\s*\d*|slide\s*\d*|beat\s*\d+|spoken|diagram|b-?roll|title)\s*\]?\s*(?::|\s[-\u2013]\s)\s*', re.I)
+def clean_caption(c):
+    """Strip script labels from every caption line before it is published (2 Nov: 'Audio:' leaked into Reel/Short/TikTok captions)."""
+    out = []
+    for l in str(c or '').split('\n'):
+        prev = None
+        while prev != l:
+            prev, l = l, CAP_LABEL.sub('', l)
+        out.append(l)
+    return '\n'.join(out).strip()
+
 def clean_line(x):
     """Strip script labels that leaked into on-screen text (seen live: 'Audio: New enquiry...')."""
     x = LABEL.sub('', str(x or '')).strip()
@@ -486,7 +498,7 @@ def render_daily(d):
         except Exception as e:
             print('ugc cutaway skipped:', e)
     make_post_cover(d)
-    cap = human_caption(d, d['caption'])
+    cap = clean_caption(human_caption(d, clean_caption(d['caption'])))
     json.dump({'date': d['date'], 'id': d['id'], 'caption': cap, 'caption_l1': cap.split('\n')[0][:120], 'audio_mode': AM if voiced or AM == 'music' else 'music', 'duration': T, 'narrated': voiced, 'ai_clip': ai, 'music': globals().get('MUSIC_USED'), 'mode': 'daily', 'cover': os.path.exists('out/cover.jpg'), 'hook_style': d.get('hookStyle'), 'point_style': d.get('pointStyle'), 'hook_bg': bool(d.get('hook_bg')), 'long': bool(d.get('long')), 'word_synced': bool(wts)}, open('out/meta.json', 'w'))
     print('rendered', T)
 

@@ -8,8 +8,25 @@ on:
     - cron: '20 6 * * *'
 permissions:
   contents: write
+  actions: read
 jobs:
+  gate:
+    # GitHub cron fires hours late, so n8n dispatches this at a fixed Amsterdam time.
+    # The cron is only a backup: it skips if a dispatched run already succeeded today.
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.g.outputs.go }}
+    steps:
+      - id: g
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          n=$(gh api "repos/${{ github.repository }}/actions/workflows/gen-images.yml/runs?event=workflow_dispatch&status=success&created=%3E%3D$(date -u +%F)" --jq '.total_count')
+          if [ "$n" -gt 0 ]; then echo "already ran today via dispatch ($n), skipping backup cron"; echo "go=0" >> "$GITHUB_OUTPUT"; else echo "go=1" >> "$GITHUB_OUTPUT"; fi
   gen:
+    needs: gate
+    if: needs.gate.outputs.go == '1'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
