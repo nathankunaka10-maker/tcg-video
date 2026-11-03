@@ -308,6 +308,9 @@ def make_post_cover(d, bg=None):
 def render_ad(d):
     os.makedirs('clips', exist_ok=True); os.makedirs('out', exist_ok=True)
     END = 2.4
+    for sc in d['scenes']:  # Gemini sometimes leaks 'Line 1:' / 'Inbox Line 1:' labels into the phone UI
+        sc['ui_lines'] = [re.sub(r'^\s*(?:\w+\s+)?line\s*\d+\s*:\s*', '', str(x), flags=re.I).strip() for x in (sc.get('ui_lines') or []) if str(x).strip()]
+        sc['ui_title'] = re.sub(r'\s*(?:\w+\s+)?line\s*\d+\s*:.*$', '', str(sc.get('ui_title') or ''), flags=re.I).strip()
     parts = []
     voice = None
     AM = pick_audio_mode(); print('audio mode:', AM)
@@ -377,7 +380,7 @@ def render_ad(d):
         '-c:v', 'libx264', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', 'out/latest.mp4'])
     try:
         sh(['ffmpeg', '-y', '-ss', '0.8', '-i', 'clips/s0.mp4', '-frames:v', '1', 'ad_bg.jpg'])
-        make_post_cover({'id': d['id'], 'title': d.get('title'), 'cover_title': d.get('cover_title'), 'series': 'LEAD LEAK'}, bg='ad_bg.jpg')
+        make_post_cover({'id': d['id'], 'title': (d['scenes'][0].get('caption') if d.get('scenes') else d.get('title')), 'cover_title': d.get('cover_title'), 'series': 'LEAD LEAK'}, bg='ad_bg.jpg')
     except Exception as e:
         print('ad cover failed:', e)
     cap = human_caption(d, d['caption'])
