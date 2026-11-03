@@ -61,7 +61,7 @@ const E=x=>1-Math.pow(1-Math.min(Math.max(x,0),1),3),R=(t,a,b)=>Math.min(Math.ma
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 let D,durs,T,WT=null,starts=[],els=[],chunks=[],nPts=0,kinN=[],kinFull=[],kinShown=[],capHide=[];
 const STOP=new Set(['a','an','the','of','to','and','or','but','by','with','for','in','on','at','from','your','my','our','their','is','are','was','be','not','no','that','this','than','as','if','so','bad','very']);
-function kinPick(txt,max){const clean=w=>w.replace(/[^\w'?!%€$&\-]/g,'');const mm=String(txt).trim().match(/^(?:step\s*)?\d+\s*[.):\-]\s*/i);const skip=mm?mm[0].trim().split(/\s+/).length:0;
+function kinPick(txt,max){const clean=w=>w.replace(/[^\w'?!%€$&\-:]/g,'').replace(/:$/,'');const mm=String(txt).trim().match(/^(?:step\s*)?\d+\s*[.):\-]\s*/i);const skip=mm?mm[0].trim().split(/\s+/).length:0;
  const all=String(txt).replace(/^\s*(?:step\s*)?\d+\s*[.):\-]\s*/i,'').replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
  const first=[];for(const w of all){first.push(w);if(/[.!?]$/.test(w))break}
  let ws=first.map(clean).filter(Boolean);
@@ -90,7 +90,7 @@ window.setData=o=>{D=o.d;durs=o.durs;T=o.T;WT=o.wts||null;let a=0;durs.forEach(x
  const kin=(txt,i,chip)=>{const kp=kinPick(txt,i===0?10:7);const ws=kp.ws;kinFull[i]=kp.full;kinShown[i]=kp.ws.length+kp.skip;
    const lines=[];for(let j=0;j<ws.length;j+=2)lines.push(ws.slice(j,j+2));let n=0;
    const sty=['','inv','cy','','inv','cy'];
-   const html=lines.map(l=>'<span class="kline">'+l.map(w=>{const c=sty[(n+i)%sty.length];const sz=Math.max(92,Math.min(190,Math.round(1500/Math.max(4,w.length*1.0+3))));return '<span class="kw '+c+'" data-k="'+(n++)+'" style="font-size:'+sz+'px">'+esc(w)+'</span>'}).join('')+'</span>').join('');
+   const html=lines.map(l=>'<span class="kline">'+l.map(w=>{const c=w.replace(/[^\w]/g,'').length<=2?'':sty[(n+i)%sty.length];const sz=Math.max(92,Math.min(190,Math.round(1500/Math.max(4,w.length*1.0+3))));return '<span class="kw '+c+'" data-k="'+(n++)+'" style="font-size:'+sz+'px">'+esc(w)+'</span>'}).join('')+'</span>').join('');
    kinN[i]=n;return '<div class="kin"><div class="burst" id="bu'+i+'" style="background:'+(i===0?'#ff3b5c':'var(--cyan)')+'"></div>'+(chip?'<div class="kchip">'+chip+'</div>':'')+'<div class="kwords" id="kw'+i+'">'+html+'</div></div>'};
  if(HS==='kinetic') S.push(kin(D.hook,0,''));
  else if(HS==='notif'){if(String(D.hook).trim().split(/\s+/).length<=16)capHide[0]=true;S.push('<div class="ntf" id="ntf"><div class="ntop"><span class="nic">✉</span><span class="napp">NEW ENQUIRY</span><span class="ntm" id="ntm">now</span></div><div class="nmsg">'+esc(short(D.hook,16))+'</div></div><div class="ncount" id="ncount">unanswered <b id="ncn">1</b></div>')}
@@ -99,8 +99,8 @@ window.setData=o=>{D=o.d;durs=o.durs;T=o.T;WT=o.wts||null;let a=0;durs.forEach(x
  const ML=D.meterLabels||['Clarity','Speed','Trust','Ask'];
  D.points.forEach((p,i)=>{
   if(PS==='kinetic') S.push(kin(p,i+1,'STEP '+(i+1)+' / '+nPts));
-  else if(PS==='diagram') S.push('<div class="dgm" id="dg'+i+'">'+D.points.map((_,k)=>'<span class="dn">'+(k+1)+'</span>'+(k<nPts-1?'<i class="dl"><b></b></i>':'')).join('')+'</div><div class="card">'+esc(short(p,12))+'</div>');
-  else S.push((PS==='meter'?'<div class="mtr"><div class="mlab">WEBSITE CHECK · +'+esc(ML[i%ML.length]).toUpperCase()+'</div><div class="mbar"><i id="mb'+i+'"></i></div></div>':'')+'<div class="stepnum">0'+(i+1)+'</div><div class="steplab">STEP '+(i+1)+' OF '+nPts+'</div><div class="card">'+esc(short(p,9))+'</div><div class="bar"><i id="bar'+i+'"></i></div>');
+  else if(PS==='diagram') S.push('<div class="dgm" id="dg'+i+'">'+D.points.map((_,k)=>'<span class="dn">'+(k+1)+'</span>'+(k<nPts-1?'<i class="dl"><b></b></i>':'')).join('')+'</div><div class="card" style="font-size:'+(String(p).split(' ').length>12?44:54)+'px">'+esc(short(p,22))+'</div>');
+  else S.push((PS==='meter'?'<div class="mtr"><div class="mlab">WEBSITE CHECK · +'+esc(ML[i%ML.length]).toUpperCase()+'</div><div class="mbar"><i id="mb'+i+'"></i></div></div>':'')+'<div class="stepnum">0'+(i+1)+'</div><div class="steplab">STEP '+(i+1)+' OF '+nPts+'</div><div class="card" style="font-size:'+(String(p).split(' ').length>12?44:54)+'px">'+esc(short(p,22))+'</div><div class="bar"><i id="bar'+i+'"></i></div>');
  });
 const TL=D.tiles||[['Leads found','leads'],['Emails sent','sent'],['Replies','replies']];
  if(D.statsLine&&D.statsStyle!=='tiles') S.push('<div class="chip">'+esc(D.statsChip||'REAL NUMBERS · OUR OWN PIPELINE')+'</div><div class="bars">'+TL.map((x,j)=>'<div class="bcol"><div class="bv'+(j===TL.length-1?' cy':'')+'" id="v'+(j+1)+'">0</div><div class="bb'+(j===TL.length-1?' win':'')+'" id="bb'+j+'"></div><div class="bl">'+esc(x[0])+'</div></div>').join('')+'</div>');
@@ -118,6 +118,7 @@ const TL=D.tiles||[['Leads found','leads'],['Emails sent','sent'],['Replies','re
   const mn=Math.min(...[...kw.querySelectorAll('.kw')].map(w=>parseFloat(w.style.fontSize)));
   if(bad)window.__qa.push(kw.id+': words still touch');if(mn<64)window.__qa.push(kw.id+': text too small ('+Math.round(mn)+'px)');
   sc.style.opacity=0});
+ if(PS!=='kinetic')D.points.forEach((_,k)=>capHide[k+1]=true);capHide[1+nPts+(D.statsLine?1:0)]=true;
  const segs=[D.hook,...D.points].concat(D.statsLine?[D.statsLine]:[]).concat([D.cta]);
  segs.forEach((s,i)=>buildChunks(s,starts[i],durs[i],WT&&WT[i],i));
 };
@@ -127,12 +128,12 @@ window.setT=t=>{
  const g=document.getElementById('glow');g.style.left=(-110+Math.sin(t*.5)*140)+'px';g.style.top=(120+Math.cos(t*.4)*140)+'px';g.style.opacity=.7+.3*Math.sin(t*2);
  document.getElementById('grid').style.transform='translateY('+((t*40)%90)+'px)';
  {const pn=document.getElementById('pin');if(pn){const a1=starts[1]+.25,b1=starts[els.length-1];pn.style.opacity=(pn.textContent&&t>a1&&t<b1)?Math.min(1,R(t,a1,a1+.4)):0}}
- els.forEach((e,i)=>{const a=starts[i],b=a+durs[i];const on=t>=a&&t<b+.12;const k=E(R(t,a,a+.3));e.style.opacity=on?Math.min(k,1-R(t,b-.12,b+.12)):0;e.style.transform='scale('+(.92+.08*k)+')'});
+ els.forEach((e,i)=>{const a=starts[i],b=a+durs[i];const on=t>=a&&t<b+.12;const k=i===0?1:E(R(t,a,a+.3));e.style.opacity=on?Math.min(k,1-R(t,b-.12,b+.12)):0;e.style.transform='scale('+(.92+.08*k)+')'});
  [1,2,3].forEach(n=>{const r=document.getElementById('r'+n);if(!r)return;const p=((t*0.6+n/3)%1);r.style.transform='scale('+(0.35+p*0.75)+')';r.style.opacity=(1-p).toFixed(3)});
  for(let i=0;i<nPts;i++){const b=document.getElementById('bar'+i);if(b)b.style.width=(100*R(t,starts[i+1],starts[i+1]+durs[i+1]))+'%'}
  const si=1+nPts;const st=D.statsLine?starts[si]:1e9;(D.tiles||[[0,'leads'],[0,'sent'],[0,'replies']]).map((x,j)=>['v'+(j+1),x[1],j*.4]).forEach(([id,k,dl])=>{const p=E(R(t,st+.3+dl,st+1.6+dl));const el=document.getElementById(id);if(el)el.textContent=Math.round((D.stats[k]||0)*p)});
  {const TT=D.tiles||[[0,'leads'],[0,'sent'],[0,'replies']];const mx=Math.max(1,...TT.map(y=>D.stats[y[1]]||0));TT.forEach((x,j)=>{const b=document.getElementById('bb'+j);if(b){const p=E(R(t,st+.3+j*.4,st+1.8+j*.4));b.style.height=(620*(D.stats[x[1]]||0)/mx*p)+'px'}})}
- let ci=chunks.findIndex(c=>t>=c.s&&t<c.e);const cap=document.getElementById('capt');if(ci>=0){const c=chunks[ci];if(capHide[c.seg]||(kinN[c.seg]&&(kinFull[c.seg]||c.w0+c.ws.length<=kinShown[c.seg])))ci=-1}
+ let ci=chunks.findIndex(c=>t>=c.s&&t<c.e);const cap=document.getElementById('capt');if(ci>=0){const c=chunks[ci];if(!WT||capHide[c.seg]||(kinN[c.seg]&&(!WT||kinFull[c.seg]||c.w0<kinShown[c.seg])))ci=-1}
  if(ci>=0){const c=chunks[ci];if(ci!==lastChunk){cap.innerHTML=c.ws.map(o=>'<span>'+esc(o.w)+'</span>').join(' ');fitCap(cap);lastChunk=ci}
   const sp=cap.querySelectorAll('span');c.ws.forEach((o,j)=>{sp[j].className=t>=o.s?'on':''});
   const k=E(R(t,c.s,c.s+.12));cap.style.transform='scale('+(0.85+0.15*k)+')';cap.style.opacity=k}
@@ -141,12 +142,12 @@ window.setT=t=>{
  if(kinN.length){let shake=0;
   for(let i=0;i<=nPts;i++){const a=starts[i],dur=durs[i],lt=t-a;if(lt<-.1||lt>dur+.2)continue;
    if(!kinN[i])continue;const n=kinN[i];const gap=Math.min(.24,(dur*.55)/n);let last=-9;
-   const tw=WT&&WT[i];document.querySelectorAll('#kw'+i+' .kw').forEach(sp=>{const j=+sp.dataset.k;const s0=tw&&tw.length?Math.max(0,tw[Math.min(j,tw.length-1)]-a-.04):(i===0?.02:.18)+j*gap;if(lt>=s0)last=Math.max(last,s0);const k=E(R(lt,s0,s0+.17));
+   const tw=WT&&WT[i];document.querySelectorAll('#kw'+i+' .kw').forEach(sp=>{const j=+sp.dataset.k;let s0=tw&&tw.length?Math.max(0,tw[Math.min(j,tw.length-1)]-a-.04):(i===0?.02:.18)+j*gap;if(i===0)s0=Math.max(-.2,s0-.2);if(lt>=s0)last=Math.max(last,s0);const k=E(R(lt,s0,s0+.17));
     sp.style.opacity=k;if(i===0){sp.style.transform='scale('+(1.7-0.7*k)+') rotate('+((1-k)*(j%2?6:-6))+'deg)';sp.style.filter='blur('+((1-k)*10).toFixed(1)+'px)'}else{sp.style.transform='translateY('+((1-k)*26).toFixed(1)+'px)';sp.style.filter='none'}});
    const pulse=Math.exp(-Math.max(0,lt-last)*7);if(i===0)shake=Math.max(shake,pulse);
    const bu=document.getElementById('bu'+i);if(bu){const N=14,ri=.55+.25*Math.sin(lt*3.2+i),pts=[];for(let q=0;q<N*2;q++){const ang=q*Math.PI/N+lt*.35;const r=(q%2?ri:1)*50;pts.push((50+r*Math.cos(ang)).toFixed(2)+'% '+(50+r*Math.sin(ang)).toFixed(2)+'%')}
     bu.style.clipPath='polygon('+pts.join(',')+')';const sc=E(R(lt,0,.25))*(0.78+0.12*pulse);bu.style.transform='scale('+sc+')';bu.style.opacity=(i===0&&D.hook_bg?.85:.95)}
-   const wp=document.getElementById('wp'+i);if(wp&&i===0){const w=R(lt,0,.28);wp.style.transform='translateX('+(w*220-110)+'%) skewX(-12deg)';wp.style.opacity=w>0&&w<1?1:0}
+   const wp=document.getElementById('wp'+i);if(wp&&i===0){const w=R(lt,0,.28);wp.style.transform='translateX('+(w*220-110)+'%) skewX(-12deg)';wp.style.opacity=0}
   }
   const st=document.getElementById('stage');st.style.transform='translate('+(Math.sin(t*90)*14*shake).toFixed(1)+'px,'+(Math.cos(t*77)*10*shake).toFixed(1)+'px)';
  }

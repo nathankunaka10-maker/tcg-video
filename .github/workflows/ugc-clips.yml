@@ -1,8 +1,7 @@
 name: ugc-clips
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '30 3 * * 0,3'
+  # schedule removed 3 Nov 2026: AI character dropped (friend feedback), faceless content only
 permissions:
   contents: write
 jobs:

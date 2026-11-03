@@ -207,3 +207,13 @@ Comments: "My anxiety", "phobia", "I hate AI", "AI" (viewers believe/accuse it i
 Why it works: (1) the threat is in the very first frame, no setup, (2) 11s = rewatch/loop, (3) one-line caption, the video carries it, (4) "is it fake?" argument in comments boosts reach.
 Ours (not our niche, take the mechanics only): first frame must already show the problem at its worst moment (e.g. the lead about to go cold: "Unread 3 days" right at second 0), keep some reels ~10-12s for loops. NO fake/AI-looking stunts (our no-slop rule; "I hate AI" comments = brand risk for an AI agency).
 To finish: watch full 11s when Chrome is back (what happens + the "thank you bro" payoff).
+
+W51 update (3 Nov, watched in full + 3 more of his reels): the float drifts to the infinity-pool edge, a hand reaches in, he floats off toward the drop ("Thank you bro" = joke payoff). One continuous shot, the danger is visible in frame 1, 11s loops. His other recent reels (5.5M trampoline/sofa prank, 2.9M phone bit, 2.7M dye-tank flag reveal) are all one-shot real-camera practical tricks with a simple visual payoff. Takeaway for us: frame 1 must already show the problem; one shot, one payoff, short enough to loop.
+
+## Friend feedback round (3 Nov) - applied
+- F1 + F2: AI character removed everywhere (UGC clips off, image prompts faceless: hands/phone/house/keys; old images with the character are no longer used). Liked: notification card over a real faceless photo, keys-on-table carousel, the clean branded text cover.
+- Carousels max 5 slides; posted Mon + Thu only (TRW AIC Instagram Growth: normal posts 1-2/week, reels are the growth lever).
+- Narrator (Gemini voice Charon) on alternate days, music-only reels on the other days with a trending, API-licensed Instagram sound attached via the Audio API (business-safe). Text is word-synced to the voice.
+- Branded cover for every post (cover.py): same frame, series chip, short title, faceless photo. Reels get cover_url.
+- Captions: TRW caption writer (adds what the video did not say, first person, one ask with AUDIT, no copied script, no invented numbers).
+- Fixed: blank first frame, grey wipe flash, duplicate subtitles under cards, "Audio:/Diagram:" labels leaking on screen, "23:47" losing its colon, boxed "I" glyph, truncated cards.

@@ -47,32 +47,17 @@ def font(size):
     return ImageFont.truetype(hits[0], size) if hits else ImageFont.load_default()
 
 def compose(src, item):
+    """Save the raw faceless photo, then put the fixed branded cover frame on top (cover.py)."""
+    from cover import make_cover, short_title
     w, h = item['w'], item['h']
     img = fill(Image.open(src).convert('RGB'), w, h)
+    bgp = '%s/%s_%s_bg.jpg' % (OUT, item['id'], item['kind'])
+    img.save(bgp, quality=90)
+    title = (item.get('cover_title') or '').strip() or short_title(item.get('text') or item.get('topic') or '')
+    json.dump({'cover_title': title, 'series': item.get('series') or ''}, open('%s/%s_meta.json' % (OUT, item['id']), 'w'))
     if item['kind'] == 'hook':
         img.save('%s/%s_hook.jpg' % (OUT, item['id']), quality=90); return
-    text = (item.get('text') or '').strip()
-    grad = Image.new('L', (1, h))
-    for y in range(h):
-        k = max(0, (y - h * 0.32) / (h * 0.68)); grad.putpixel((0, y), int(235 * min(1, k * 1.15)))
-    shade = Image.new('RGB', (w, h), (6, 10, 20))
-    img = Image.composite(shade, img, grad.resize((w, h)))
-    d = ImageDraw.Draw(img)
-    size = 96
-    while size > 48:
-        f = font(size); lines = textwrap.wrap(text, width=max(8, int(w / (size * 0.56))))
-        lh = int(size * 1.08); block = lh * len(lines)
-        if len(lines) <= 5 and all(d.textlength(l, font=f) < w - 140 for l in lines): break
-        size -= 6
-    y = h - 170 - block
-    d.rectangle((70, y - 44, 190, y - 30), fill=(34, 211, 238))
-    for l in lines:
-        d.text((72, y + 4), l, font=f, fill=(0, 0, 0))
-        d.text((70, y), l, font=f, fill=(255, 255, 255)); y += lh
-    fb = font(34)
-    d.text((70, h - 100), 'the', font=fb, fill=(156, 163, 175))
-    d.text((70 + d.textlength('the', font=fb), h - 100), 'copygrind3r', font=fb, fill=(6, 182, 212))
-    img.save('%s/%s_%s.jpg' % (OUT, item['id'], item['kind']), quality=90)
+    make_cover(title, item.get('series'), w, h, '%s/%s_%s.jpg' % (OUT, item['id'], item['kind']), bg=bgp)
 
 feed = json.loads(os.environ['TEST_ITEMS']) if os.environ.get('TEST_ITEMS') else json.load(urllib.request.urlopen(FEED, timeout=180))
 print('items:', [(i['id'], i['kind'], i.get('use_person')) for i in feed.get('items', [])])
@@ -80,7 +65,8 @@ for it in feed.get('items', []):
     if os.path.exists('%s/%s_%s.jpg' % (OUT, it['id'], it['kind'])): print('exists', it['id']); continue
     p = it['prompt'] + ' Photorealistic, natural light, no text, no logos, no watermark.'
     src = None
-    for name, fn in [('klein', lambda: gen_klein(p, it.get('use_person'), it['w'], it['h'])), ('zimage', lambda: gen_zimage(p.replace('the same young man from the reference photo, same face and grey hoodie', 'a young man in a grey hoodie'), it['w'], it['h']))]:
+    p += ' No faces, no portraits, no identifiable people; hands or silhouettes from behind only.'
+    for name, fn in [('klein', lambda: gen_klein(p, False, it['w'], it['h'])), ('zimage', lambda: gen_zimage(p, it['w'], it['h']))]:
         try:
             src = fn(); print('generated', it['kind'], 'with', name, flush=True); break
         except Exception as e:
@@ -88,6 +74,6 @@ for it in feed.get('items', []):
     if src:
         try: compose(src, it)
         except Exception as e: print('compose fail', repr(e)[:300])
-files = sorted(glob.glob(OUT + '/*.jpg'), key=os.path.getmtime)
-for f in files[:-45]: os.remove(f)
+files = sorted(glob.glob(OUT + '/*.jpg') + glob.glob(OUT + '/*.json'), key=os.path.getmtime)
+for f in files[:-90]: os.remove(f)
 print('done')

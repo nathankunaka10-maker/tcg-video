@@ -16,8 +16,7 @@ on:
         description: 'Optional public URL of a 10-20 s clean recording of Nathan speaking (clones his voice with Chatterbox)'
         required: false
         default: ''
-  schedule:
-    - cron: '20 1 * * *'
+  # schedule removed 3 Nov 2026: AI character dropped (friend feedback), faceless content only
 permissions:
   contents: write
 concurrency:

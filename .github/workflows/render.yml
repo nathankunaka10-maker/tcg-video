@@ -6,6 +6,10 @@ on:
         description: 'ad, daily, or empty for auto (Tue/Fri = ad)'
         required: false
         default: ''
+      audio_mode:
+        description: 'voice, music, or empty for auto (alternates)'
+        required: false
+        default: ''
       publish:
         description: 'Push to the video branch (posts automatically). Off = test render only, download from artifacts'
         type: boolean
@@ -24,10 +28,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-inter
-      - run: pip install playwright && playwright install --with-deps chromium
+      - run: pip install playwright pillow numpy && playwright install --with-deps chromium
       - run: python render.py
         env:
           MODE: ${{ inputs.mode }}
+          AUDIO_MODE: ${{ inputs.audio_mode }}
       - uses: actions/upload-artifact@v4
         with:
           name: render-${{ github.run_id }}

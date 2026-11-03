@@ -24,6 +24,7 @@ AD_DAYS = (1, 4)  # Tuesday, Friday (UTC weekday)
 UGC_BASE = 'https://raw.githubusercontent.com/nathankunaka10-maker/tcg-video/main/assets/ugc/'
 UGC_CLIPS = ['clip1.mp4', 'bank_typing.mp4', 'bank_phone.mp4']
 FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
+RECENT = []
 
 def get(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'tcg-video'})
@@ -43,7 +44,7 @@ def ugc_pick():
 
 def use_ugc(p):
     import random
-    return os.environ.get('UGC', 'on') != 'off' and random.random() < p
+    return os.environ.get('UGC', 'off') == 'on' and random.random() < p
 
 def sh(cmd):
     return subprocess.run(cmd, check=True, capture_output=True)
@@ -57,6 +58,60 @@ def edge_tts(text, out_wav, voice='en-GB-RyanNeural'):
         return True
     except Exception as e:
         print('edge-tts failed:', e); return False
+
+VOICE = os.environ.get('VOICE', 'Charon')  # one fixed narrator = recognisable brand voice
+TTS_URL = 'https://natenathan.duckdns.org/webhook/cg-tts'
+HIST_URL = 'https://raw.githubusercontent.com/nathankunaka10-maker/tcg-video/video/history.json'
+
+def gemini_tts(text, out_wav):
+    """Narrator via n8n -> Gemini TTS (free tier). Handles WAV or raw 24k PCM. Returns True on success."""
+    try:
+        req = urllib.request.Request(TTS_URL, data=json.dumps({'text': text, 'voice': VOICE}).encode(), headers={'Content-Type': 'application/json'})
+        r = json.load(urllib.request.urlopen(req, timeout=180))
+        b = base64.b64decode(r.get('audio_b64') or '')
+        if len(b) < 20000: return False
+        if b[:4] == b'RIFF':
+            open('tts_raw.wav', 'wb').write(b); src = ['-i', 'tts_raw.wav']
+        else:
+            open('tts_raw.pcm', 'wb').write(b); src = ['-f', 's16le', '-ar', '24000', '-ac', '1', '-i', 'tts_raw.pcm']
+        sh(['ffmpeg', '-y'] + src + ['-af', 'silenceremove=start_periods=1:start_threshold=-45dB,loudnorm=I=-16:TP=-1.5', '-ar', '24000', '-ac', '1', out_wav])
+        return True
+    except Exception as e:
+        print('gemini tts failed:', e); return False
+
+def narrate(text, out_wav):
+    if gemini_tts(text, out_wav):
+        print('narrator: gemini', VOICE); return True
+    if edge_tts(text, out_wav):
+        print('narrator: edge backup'); return True
+    return False
+
+def history():
+    try:
+        h = get(HIST_URL)
+        return h if isinstance(h, list) else []
+    except Exception:
+        return []
+
+def fresh_choice(options, weights, recent, key):
+    """Weighted pick that avoids whatever was used in the last 2 posts (keeps the feed varied, less 'automated')."""
+    import random as _r
+    used = [x.get(key) for x in recent[-2:]]
+    opts = [(o, w) for o, w in zip(options, weights) if o not in used] or list(zip(options, weights))
+    return _r.choices([o for o, _ in opts], [w for _, w in opts])[0]
+
+def mix_voice_music(voice_wav, T, out_wav, starts=None):
+    """Music bed ducked under the narrator (sidechain), plus scene whooshes."""
+    pick_music(T, 'bed_raw.wav')
+    bed = 'bed_raw.wav'
+    if starts:
+        try:
+            add_whooshes('bed_raw.wav', starts, T, 'bed_w.wav'); bed = 'bed_w.wav'
+        except Exception as e:
+            print('whoosh skipped:', e)
+    sh(['ffmpeg', '-y', '-i', voice_wav, '-i', bed, '-filter_complex',
+        '[0:a]aresample=44100,apad=whole_dur=%.2f,asplit=2[v][sc];[1:a]volume=0.32[m];[m][sc]sidechaincompress=threshold=0.03:ratio=8:attack=20:release=350[md];[v][md]amix=inputs=2:normalize=0:duration=longest,loudnorm=I=-14:TP=-1.5:LRA=11[a]' % T,
+        '-map', '[a]', '-t', '%.2f' % T, '-ar', '44100', '-ac', '2', out_wav])
 
 def align_words(aud, segs, T):
     """Real word timings from the voiceover (free faster-whisper tiny.en on CPU).
@@ -130,7 +185,9 @@ def pick_music(T, out_wav):
     import glob as _g, random as _rr
     bank = sorted(_g.glob('assets/music/*.mp3') + _g.glob('assets/music/*.m4a') + _g.glob('assets/music/*.wav'))
     if bank:
-        trk = _rr.choice(bank); print('music track:', trk)
+        recent = [x.get('music') for x in (globals().get('RECENT') or [])[-2:]]
+        trk = _rr.choice([b for b in bank if os.path.basename(b) not in recent] or bank); print('music track:', trk)
+        globals()['MUSIC_USED'] = os.path.basename(trk)
         sh(['ffmpeg', '-y', '-stream_loop', '-1', '-i', trk, '-t', '%.2f' % T, '-af', 'afade=t=in:d=0.2,afade=t=out:st=%.2f:d=1.0,volume=0.8' % max(T - 1.0, 0), '-ar', '44100', out_wav])
     else:
         music_bed(T, out_wav)
@@ -176,10 +233,94 @@ async def snap(template, data, T, transparent):
                 await pg.screenshot(path='frames/f%04d.jpg' % i, type='jpeg', quality=88)
         await b.close()
 
+CHAIN_URL = 'https://natenathan.duckdns.org/webhook/gemini-chain'
+CAPTION_RULES = (
+    "You write the Instagram/Facebook caption for a short video by thecopygrind3r (Nathan, builds systems so estate agents and small "
+    "local businesses answer every enquiry in minutes). TRW rules (Arno, Dylan, Andrew): the caption is NOT the video script. "
+    "The viewer already saw the script on screen, so the caption adds what the video did not say: one short personal angle, a "
+    "concrete detail, or an opinion someone could disagree with. Write like a real person typing on his phone: first person "
+    "singular (I), plain words, short lines, 2 to 5 lines total, max 60 words before the call to action. Line 1 must make a "
+    "scroller open the caption and must NOT repeat the on-screen hook. You may ask one genuine question to start comments. "
+    "End with one natural ask that contains the exact word AUDIT in capitals (vary the wording, e.g. 'Drop AUDIT and I'll look "
+    "at yours'). Never invent client results, numbers, names or testimonials; do not use any number that is not in the input. Never write we/our/us. Do not invent personal backstories (no 'I used to', no made-up events); opinions and what you see in your work are fine. Never "
+    "mention school, training, age or private life. Never claim money or deals lost (no 'lose thousands') and no guarantees. No em dashes, no hashtags, max 1 emoji, no 'unlock, leverage, seamless, "
+    "game-changer, elevate, in today's world, here's the thing'. Return JSON {\"caption\": \"...\"}."
+)
+
+def human_caption(d, fallback):
+    """TRW caption writer: adds context instead of pasting the script. Falls back to the old caption if anything fails."""
+    try:
+        script = {'hook': d.get('hook') or d.get('title'), 'points': d.get('points') or [x.get('caption') for x in d.get('scenes', [])],
+                  'recent_captions_to_avoid_repeating': [x.get('caption_l1') for x in RECENT[-5:] if x.get('caption_l1')]}
+        payload = {'systemInstruction': {'parts': [{'text': CAPTION_RULES}]},
+                   'contents': [{'parts': [{'text': json.dumps(script)}]}],
+                   'generationConfig': {'responseMimeType': 'application/json', 'temperature': 1.0}}
+        req = urllib.request.Request(CHAIN_URL, data=json.dumps({'payload': payload}).encode(), headers={'Content-Type': 'application/json'})
+        r = json.load(urllib.request.urlopen(req, timeout=120))
+        tx = ''.join(p.get('text', '') for p in r['candidates'][0]['content']['parts'] if not p.get('thought'))
+        cap = json.loads(tx[tx.find('{'):tx.rfind('}') + 1])['caption'].strip()
+        cap = re.sub(r'\s*[\u2014\u2013]\s*', ', ', cap)
+        low = cap.lower(); norm = lambda x: re.sub(r'[^a-z0-9 ]', '', str(x).lower()).strip()
+        lines = [norm(x) for x in [d.get('hook')] + (d.get('points') or []) if x and len(norm(x)) > 25]
+        src_nums = set(re.findall(r'\d+', json.dumps(script)))
+        bad_num = [n for n in re.findall(r'\d+', cap) if n not in src_nums]
+        if 'AUDIT' not in cap or any(l in norm(cap) for l in lines) or len(cap) < 60 or bad_num or re.search(r"\b(we|we've|our|us)\b", low):
+            print('caption rejected (missing AUDIT or copies the script):', cap[:120]); return fallback
+        tags = re.findall(r'#\w+', fallback)
+        tags = (['#thecopygrind3r'] + [t for t in tags if t.lower() != '#thecopygrind3r'])[:4]
+        print('human caption:', cap.split('\n')[0])
+        return cap + '\n\n' + ' '.join(tags)
+    except Exception as e:
+        print('caption writer failed, using script caption:', e); return fallback
+
+def pick_audio_mode():
+    """Variety: alternate narrator and music-only reels (env AUDIO_MODE overrides)."""
+    m = os.environ.get('AUDIO_MODE', '').strip()
+    if m in ('voice', 'music'): return m
+    if os.environ.get('NARRATION') == 'off': return 'music'
+    last = RECENT[-1] if RECENT else {}
+    return 'music' if last.get('audio_mode') == 'voice' or (not last.get('audio_mode') and last.get('narrated')) else 'voice'
+
+def guess_series(text):
+    t = str(text or '').lower()
+    if re.search(r'myth|wrong|mistake|stop |don.t|never', t): return 'MYTH vs FACT'
+    if re.search(r'how to|step|checklist|guide|template|fix', t): return 'QUICK FIX'
+    if re.search(r'night|11 ?pm|midnight|weekend|after hours|reply|enquir|lead', t): return 'LEAD LEAK'
+    return 'AGENT PLAYBOOK'
+
+def make_post_cover(d, bg=None):
+    """Branded grid thumbnail for the reel (out/cover.jpg), same frame as carousel covers."""
+    try:
+        from cover import make_cover, short_title
+        meta = {}
+        mp = 'assets/gen/%s_meta.json' % d.get('id', '')
+        if os.path.exists(mp): meta = json.load(open(mp))
+        title = d.get('cover_title') or meta.get('cover_title') or short_title(d.get('title') or d.get('hook') or '')
+        series = d.get('series') or meta.get('series') or guess_series((d.get('hook') or d.get('title') or '') + ' ' + ' '.join(d.get('points') or []))
+        if not bg:
+            hb = 'assets/gen/%s_hook_bg.jpg' % d.get('id', '')
+            bg = hb if os.path.exists(hb) else None
+        make_cover(title, series, 1080, 1920, 'out/cover.jpg', bg=bg)
+        print('cover:', title, '|', series)
+    except Exception as e:
+        print('cover failed:', e)
+
 def render_ad(d):
     os.makedirs('clips', exist_ok=True); os.makedirs('out', exist_ok=True)
     END = 2.4
     parts = []
+    voice = None
+    AM = pick_audio_mode(); print('audio mode:', AM)
+    if AM == 'voice':
+        caps = [str(x.get('caption') or '').strip() for x in d['scenes']]
+        spoken = ' '.join(c if c[-1:] in '.!?' else c + '.' for c in caps if c)
+        if spoken and narrate(spoken, 'ad_voice.wav'):
+            vd = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', 'ad_voice.wav']).decode().strip())
+            tot = sum(x['dur'] for x in d['scenes'])
+            if vd + 0.6 > tot:  # stretch scenes so the narrator never gets cut off
+                k = (vd + 0.6) / tot
+                for x in d['scenes']: x['dur'] = round(x['dur'] * k, 2)
+            voice = 'ad_voice.wav'
     ugc_i = None
     if len(d['scenes']) >= 3 and use_ugc(float(os.environ.get('UGC_AD_P', '0.6'))):
         ugc_i = 1  # middle scene becomes an AI clip of Nathan (labelled)
@@ -214,7 +355,7 @@ def render_ad(d):
               "scale=w='trunc(1080*(%s)/2)*2':h='trunc(1920*(%s)/2)*2':eval=frame,crop=1080:1920,"
               "setsar=1,fps=%d,eq=saturation=1.08:contrast=1.04" % (z, z, FPS))
         out = 'clips/s%d.mp4' % i
-        sh(['ffmpeg', '-y', '-ss', '%.2f' % ss, '-i', raw, '-t', '%.2f' % s['dur'], '-vf', vf, '-an', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-pix_fmt', 'yuv420p', out])
+        sh(['ffmpeg', '-y', '-stream_loop', '-1', '-ss', '%.2f' % ss, '-i', raw, '-t', '%.2f' % s['dur'], '-vf', vf, '-an', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-pix_fmt', 'yuv420p', out])
         parts.append(out)
     sh(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'color=c=0x0b0b0d:s=1080x1920:r=%d:d=%.2f' % (FPS, END), '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', 'clips/end.mp4'])
     parts.append('clips/end.mp4')
@@ -222,28 +363,47 @@ def render_ad(d):
     sh(['ffmpeg', '-y', '-f', 'concat', '-safe', '0', '-i', 'clips/list.txt', '-c', 'copy', 'base.mp4'])
     T = sum(s['dur'] for s in d['scenes']) + END
     asyncio.run(snap('ad.html', d, T, True))
-    pick_music(T, 'music.wav')
-    sh(['ffmpeg', '-y', '-i', 'music.wav', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', '44100', 'music_n.wav']); os.replace('music_n.wav', 'music.wav')
+    st = [sum(x['dur'] for x in d['scenes'][:i]) for i in range(len(d['scenes']))]
+    if voice:
+        try:
+            mix_voice_music(voice, T, 'music.wav', st)
+        except Exception as e:
+            print('voice mix failed, music only:', e); voice = None
+    if not voice:
+        pick_music(T, 'music.wav')
+        sh(['ffmpeg', '-y', '-i', 'music.wav', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', '44100', 'music_n.wav']); os.replace('music_n.wav', 'music.wav')
     sh(['ffmpeg', '-y', '-i', 'base.mp4', '-framerate', str(FPS), '-i', 'frames/f%04d.png', '-i', 'music.wav',
         '-filter_complex', '[0:v][1:v]overlay=0:0:shortest=1[v]', '-map', '[v]', '-map', '2:a',
         '-c:v', 'libx264', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', 'out/latest.mp4'])
-    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': False, 'mode': 'ad', 'mechanism': d.get('mechanism')}, open('out/meta.json', 'w'))
+    try:
+        sh(['ffmpeg', '-y', '-ss', '0.8', '-i', 'clips/s0.mp4', '-frames:v', '1', 'ad_bg.jpg'])
+        make_post_cover({'id': d['id'], 'title': d.get('title'), 'cover_title': d.get('cover_title'), 'series': 'LEAD LEAK'}, bg='ad_bg.jpg')
+    except Exception as e:
+        print('ad cover failed:', e)
+    cap = human_caption(d, d['caption'])
+    json.dump({'date': d['date'], 'id': d['id'], 'caption': cap, 'caption_l1': cap.split('\n')[0][:120], 'audio_mode': AM if voice or AM == 'music' else 'music', 'duration': T, 'narrated': bool(voice), 'mode': 'ad', 'mechanism': d.get('mechanism'), 'music': globals().get('MUSIC_USED'), 'cover': os.path.exists('out/cover.jpg')}, open('out/meta.json', 'w'))
     print('rendered ad', d.get('mechanism'), T)
+
+LABEL = re.compile(r'^\s*(?:\[?\s*(?:audio|vo|voice\s*over|voiceover|narrator|visual|on[- ]?screen(?: text)?|text overlay|overlay|caption|hook|cta|scene\s*\d*|slide\s*\d*|diagram|b-?roll|title)\s*\]?\s*[:\-\u2013]\s*)+', re.I)
+def clean_line(x):
+    """Strip script labels that leaked into on-screen text (seen live: 'Audio: New enquiry...')."""
+    x = LABEL.sub('', str(x or '')).strip()
+    x = re.sub(r'\[([^\]]{1,60})\]', r'\1', x).replace('->', '\u2192').strip()
+    return x[:1].upper() + x[1:] if x else x
 
 def render_daily(d):
     os.makedirs('out', exist_ok=True)
+    d['hook'] = clean_line(d.get('hook')); d['points'] = [clean_line(x) for x in d.get('points', []) if clean_line(x)]; d['cta'] = clean_line(d.get('cta'))
     aud = None; adur = 0
     segs = [d['hook']] + d['points'] + ([d['statsLine']] if d.get('statsLine') else []) + [d['cta']]
-    narrate = os.environ.get('NARRATION', 'off') == 'on'
-    if not narrate:
+    AM = pick_audio_mode(); print('audio mode:', AM)
+    voice_on = AM == 'voice'
+    if not voice_on:
         print('narration off: text + music')
-    elif d.get('audio_b64'):
-        open('narr.pcm', 'wb').write(base64.b64decode(d['audio_b64']))
-        sh(['ffmpeg', '-y', '-f', 's16le', '-ar', '24000', '-ac', '1', '-i', 'narr.pcm', 'narr.wav'])
-        aud = 'narr.wav'
-    elif narrate and edge_tts(' ... '.join(segs), 'narr.wav'):
-        aud = 'narr.wav'
-        print('used Edge TTS backup voice')
+    else:
+        spoken = ' '.join(x.strip() if x.strip()[-1:] in '.!?' else x.strip() + '.' for x in segs if x.strip())
+        if narrate(spoken, 'narr.wav'):
+            aud = 'narr.wav'
     if aud:
         adur = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', aud]).decode().strip())
     words = [max(len(s.split()), 3) for s in segs]
@@ -274,22 +434,27 @@ def render_daily(d):
         except Exception as e:
             print('pause sync skipped:', e)
     import random as _r
-    kp = float(os.environ.get('KINETIC_P', '0.5'))
     kin_env = os.environ.get('KINETIC', '')
     if kin_env == 'on': d['hookStyle'], d['pointStyle'] = 'kinetic', 'kinetic'
     elif kin_env == 'off': d['hookStyle'], d['pointStyle'] = 'classic', 'cards'
     else:
-        d['hookStyle'] = os.environ.get('HOOK_STYLE') or _r.choices(['kinetic', 'notif', 'classic', 'countdown'], [0.35, 0.3, 0.15, 0.2])[0]
-        d['pointStyle'] = os.environ.get('POINT_STYLE') or _r.choices(['kinetic', 'meter', 'cards'], [0.4, 0.35, 0.25])[0]
+        d['hookStyle'] = os.environ.get('HOOK_STYLE') or fresh_choice(['kinetic', 'notif', 'classic', 'countdown'], [0.35, 0.3, 0.15, 0.2], RECENT, 'hook_style')
+        d['pointStyle'] = os.environ.get('POINT_STYLE') or fresh_choice(['kinetic', 'meter', 'cards', 'diagram'], [0.35, 0.3, 0.2, 0.15], RECENT, 'point_style')
     d['kinetic'] = d['hookStyle'] == 'kinetic'
-    hb = 'assets/gen/%s_hook.jpg' % d.get('id', '')
-    if os.path.exists(hb):
+    hb = 'assets/gen/%s_hook_bg.jpg' % d.get('id', '')
+    if os.path.exists(hb):  # only faceless images made under the new rules (old ones had the AI character)
         shutil.copy(hb, 'hookbg.jpg'); d['hook_bg'] = 'hookbg.jpg'; print('using AI hook background')
     print('styles:', d['hookStyle'], d['pointStyle'])
-    if not aud:
+    st0 = [sum(durs[:i]) for i in range(len(durs))]
+    voiced = bool(aud)
+    if aud:
+        try:
+            mix_voice_music(aud, T, 'mix.wav', st0); aud = 'mix.wav'
+        except Exception as e:
+            print('music under voice failed, voice only:', e)
+    else:
         try:
             pick_music(T, 'music_raw.wav')
-            st0 = [sum(durs[:i]) for i in range(len(durs))]
             try:
                 add_whooshes('music_raw.wav', st0, T, 'music.wav')
             except Exception as e:
@@ -317,7 +482,9 @@ def render_daily(d):
             print('added AI cutaway on hook')
         except Exception as e:
             print('ugc cutaway skipped:', e)
-    json.dump({'date': d['date'], 'id': d['id'], 'caption': d['caption'], 'duration': T, 'narrated': bool(aud) and aud != 'music.wav', 'ai_clip': ai, 'hook_style': d.get('hookStyle'), 'point_style': d.get('pointStyle'), 'hook_bg': bool(d.get('hook_bg')), 'long': bool(d.get('long')), 'word_synced': bool(wts)}, open('out/meta.json', 'w'))
+    make_post_cover(d)
+    cap = human_caption(d, d['caption'])
+    json.dump({'date': d['date'], 'id': d['id'], 'caption': cap, 'caption_l1': cap.split('\n')[0][:120], 'audio_mode': AM if voiced or AM == 'music' else 'music', 'duration': T, 'narrated': voiced, 'ai_clip': ai, 'music': globals().get('MUSIC_USED'), 'mode': 'daily', 'cover': os.path.exists('out/cover.jpg'), 'hook_style': d.get('hookStyle'), 'point_style': d.get('pointStyle'), 'hook_bg': bool(d.get('hook_bg')), 'long': bool(d.get('long')), 'word_synced': bool(wts)}, open('out/meta.json', 'w'))
     print('rendered', T)
 
 if __name__ == '__main__':
@@ -338,7 +505,14 @@ if __name__ == '__main__':
             d = get(FEED)
     if d.get('skip'):
         print('nothing to render today'); raise SystemExit(0)
+    RECENT = history()
+    print('recent posts:', [(x.get('mode'), x.get('hook_style'), x.get('point_style'), x.get('music')) for x in RECENT[-3:]])
     if d.get('mode') == 'ad':
         render_ad(d)
     else:
         render_daily(d)
+    try:
+        m = json.load(open('out/meta.json'))
+        json.dump((RECENT + [m])[-20:], open('out/history.json', 'w'))
+    except Exception as e:
+        print('history not saved:', e)
