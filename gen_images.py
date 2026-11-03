@@ -62,7 +62,7 @@ def compose(src, item):
 feed = json.loads(os.environ['TEST_ITEMS']) if os.environ.get('TEST_ITEMS') else json.load(urllib.request.urlopen(FEED, timeout=180))
 print('items:', [(i['id'], i['kind'], i.get('use_person')) for i in feed.get('items', [])])
 for it in feed.get('items', []):
-    if os.path.exists('%s/%s_%s.jpg' % (OUT, it['id'], it['kind'])): print('exists', it['id']); continue
+    if os.path.exists('%s/%s_%s.jpg' % (OUT, it['id'], it['kind'])) and os.path.exists('%s/%s_%s_bg.jpg' % (OUT, it['id'], it['kind'])): print('exists', it['id']); continue
     p = it['prompt'] + ' Photorealistic, natural light, no text, no logos, no watermark.'
     src = None
     p += ' No faces, no portraits, no identifiable people; hands or silhouettes from behind only.'
