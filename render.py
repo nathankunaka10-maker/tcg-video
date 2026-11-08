@@ -525,7 +525,18 @@ if __name__ == '__main__':
     if d.get('mode') == 'ad':
         render_ad(d)
     else:
-        render_daily(d)
+        # 8 Nov 2026 (Nathan approved): the daily reel is a faceless Proof Reel (screen recording of a working demo on an
+        # example business). The old text-slide reel is the fallback if anything in the proof render fails. PROOF=off disables it.
+        done = False
+        if os.environ.get('PROOF', 'on') != 'off':
+            try:
+                import proof
+                proof.render_proof(d, sys.modules[__name__])
+                done = os.path.exists('out/latest.mp4') and os.path.exists('out/meta.json')
+            except Exception as e:
+                import traceback; traceback.print_exc(); print('proof reel failed, falling back to the daily text reel:', e)
+        if not done:
+            render_daily(d)
     try:
         m = json.load(open('out/meta.json'))
         json.dump((RECENT + [m])[-20:], open('out/history.json', 'w'))
