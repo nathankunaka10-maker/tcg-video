@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - run: pip install gradio_client opencv-python-headless
+      - run: pip install gradio_client 'opencv-python-headless<5'
       - run: python faceless_gen.py
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
