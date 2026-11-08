@@ -1,0 +1,36 @@
+name: faceless-clips
+on:
+  workflow_dispatch:
+    inputs:
+      max_new:
+        description: 'clips to make this run'
+        required: false
+        default: '4'
+  schedule:
+    - cron: '20 3 * * *'
+permissions:
+  contents: write
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pip install gradio_client opencv-python-headless
+      - run: python faceless_gen.py
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          MAX_NEW: ${{ inputs.max_new || '4' }}
+      - name: commit clips
+        run: |
+          git config user.name tcg
+          git config user.email tcg@users.noreply.github.com
+          git add assets/faceless
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -qm "faceless clips $(date -u +%F)"
+          git pull -q --rebase
+          git push

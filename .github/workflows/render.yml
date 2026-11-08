@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'ad, daily, or empty for auto (Tue/Fri = ad)'
+        description: 'ad, story, proof, daily, or empty for auto (Tue/Fri ad, Wed/Sun story, other days proof)'
         required: false
         default: ''
       audio_mode:

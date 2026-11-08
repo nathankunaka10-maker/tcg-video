@@ -509,7 +509,7 @@ if __name__ == '__main__':
     else:
         d = None
         mode = os.environ.get('MODE', '').strip().lower()
-        if mode == 'ad' or (mode != 'daily' and datetime.datetime.utcnow().weekday() in AD_DAYS):
+        if mode == 'ad' or (mode not in ('daily', 'story', 'proof') and datetime.datetime.utcnow().weekday() in AD_DAYS):
             try:
                 a = get(AD_FEED)
                 if a.get('scenes') and not a.get('skip'):
@@ -528,7 +528,17 @@ if __name__ == '__main__':
         # 8 Nov 2026 (Nathan approved): the daily reel is a faceless Proof Reel (screen recording of a working demo on an
         # example business). The old text-slide reel is the fallback if anything in the proof render fails. PROOF=off disables it.
         done = False
-        if os.environ.get('PROOF', 'on') != 'off':
+        # 8 Nov 2026: story reels (faceless character + true behind-the-build story) on Wednesday and Sunday (UTC).
+        _m = os.environ.get('MODE', '').strip().lower()
+        story_day = _m == 'story' or (_m not in ('proof', 'daily') and datetime.datetime.utcnow().weekday() in (2, 6))
+        if story_day and os.environ.get('STORY', 'on') != 'off':
+            try:
+                import story
+                story.render_story(d, sys.modules[__name__])
+                done = os.path.exists('out/latest.mp4') and os.path.exists('out/meta.json')
+            except Exception as e:
+                import traceback; traceback.print_exc(); print('story reel not possible today, using a proof reel:', e)
+        if not done and os.environ.get('PROOF', 'on') != 'off':
             try:
                 import proof
                 proof.render_proof(d, sys.modules[__name__])
