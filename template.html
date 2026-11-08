@@ -71,6 +71,7 @@ function kinPick(txt,max){const clean=w=>w.replace(/[^\w'?!%€$&\-:]/g,'').repl
  ws=(cut>=2?first.slice(0,cut+1):first.slice(0,max)).map(clean).filter(Boolean);
  while(ws.length>2&&STOP.has(ws[ws.length-1].toLowerCase()))ws.pop();
  return {ws,full:false,skip}}
+function cardFs(p){const n=String(p).trim().split(/\s+/).length;return n<=12?54:n<=18?46:n<=26?40:n<=34?35:31}
 function short(s,n){const w=String(s).split(/\s+/);return w.length<=n?s:w.slice(0,n).join(' ')+'…'}
 function buildChunks(text,a,dur,tw,seg){let wi=0;
  const words=String(text).replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
@@ -99,8 +100,8 @@ window.setData=o=>{D=o.d;durs=o.durs;T=o.T;WT=o.wts||null;let a=0;durs.forEach(x
  const ML=D.meterLabels||['Clarity','Speed','Trust','Ask'];
  D.points.forEach((p,i)=>{
   if(PS==='kinetic') S.push(kin(p,i+1,'STEP '+(i+1)+' / '+nPts));
-  else if(PS==='diagram') S.push('<div class="dgm" id="dg'+i+'">'+D.points.map((_,k)=>'<span class="dn">'+(k+1)+'</span>'+(k<nPts-1?'<i class="dl"><b></b></i>':'')).join('')+'</div><div class="card" style="font-size:'+(String(p).split(' ').length>12?44:54)+'px">'+esc(short(p,22))+'</div>');
-  else S.push((PS==='meter'?'<div class="mtr"><div class="mlab">WEBSITE CHECK · +'+esc(ML[i%ML.length]).toUpperCase()+'</div><div class="mbar"><i id="mb'+i+'"></i></div></div>':'')+'<div class="stepnum">0'+(i+1)+'</div><div class="steplab">STEP '+(i+1)+' OF '+nPts+'</div><div class="card" style="font-size:'+(String(p).split(' ').length>12?44:54)+'px">'+esc(short(p,22))+'</div><div class="bar"><i id="bar'+i+'"></i></div>');
+  else if(PS==='diagram') S.push('<div class="dgm" id="dg'+i+'">'+D.points.map((_,k)=>'<span class="dn">'+(k+1)+'</span>'+(k<nPts-1?'<i class="dl"><b></b></i>':'')).join('')+'</div><div class="card" style="font-size:'+cardFs(p)+'px">'+esc(p)+'</div>');
+  else S.push((PS==='meter'?'<div class="mtr"><div class="mlab">WEBSITE CHECK · +'+esc(ML[i%ML.length]).toUpperCase()+'</div><div class="mbar"><i id="mb'+i+'"></i></div></div>':'')+'<div class="stepnum">0'+(i+1)+'</div><div class="steplab">STEP '+(i+1)+' OF '+nPts+'</div><div class="card" style="font-size:'+cardFs(p)+'px">'+esc(p)+'</div><div class="bar"><i id="bar'+i+'"></i></div>');
  });
 const TL=D.tiles||[['Leads found','leads'],['Emails sent','sent'],['Replies','replies']];
  if(D.statsLine&&D.statsStyle!=='tiles') S.push('<div class="chip">'+esc(D.statsChip||'REAL NUMBERS · OUR OWN PIPELINE')+'</div><div class="bars">'+TL.map((x,j)=>'<div class="bcol"><div class="bv'+(j===TL.length-1?' cy':'')+'" id="v'+(j+1)+'">0</div><div class="bb'+(j===TL.length-1?' win':'')+'" id="bb'+j+'"></div><div class="bl">'+esc(x[0])+'</div></div>').join('')+'</div>');
