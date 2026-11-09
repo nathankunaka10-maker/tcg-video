@@ -65,12 +65,16 @@ def gemini(prompt, system='', want_json=True, search=False, temp=0.7):
         payload['tools'] = [{'google_search': {}}]
     elif want_json:
         payload['generationConfig']['responseMimeType'] = 'application/json'
-    for attempt in range(3):
-        r = http(GEMINI, {'payload': payload}, headers={'Content-Type': 'application/json'}, timeout=290)
+    for attempt in range(5):
+        try:
+            r = http(GEMINI, {'payload': payload}, headers={'Content-Type': 'application/json'}, timeout=290)
+        except Exception as e:  # network timeout: back off and retry instead of killing the niche
+            r = {'exception': str(e)[:200]}
         try:
             txt = ''.join(p.get('text', '') for p in r['candidates'][0]['content']['parts'])
         except Exception:
-            print('gemini error', str(r)[:300]); time.sleep(10); continue
+            # empty {} = every model in the gateway chain was rate-limited; wait it out (30s, 60s, 90s, 120s)
+            print('gemini error', str(r)[:300]); time.sleep(30 * (attempt + 1)); continue
         if not want_json:
             return txt
         m = re.search(r'\{[\s\S]*\}|\[[\s\S]*\]', txt)
