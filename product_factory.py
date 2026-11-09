@@ -118,10 +118,11 @@ def research(niche_key, existing):
     prompt = f"""Find the single best NEW digital product to make next in this niche: {name}.
 Scope: {scope}
 Method (Iman Gadzhi 'unique value zone' + marketplace validation): search the web (Etsy and Gumroad bestseller listings, Pinterest, Reddit questions) for products in this niche that clearly sell (bestseller badges, many reviews, many sales), then go one level narrower to a specific buyer + specific job that is under-served.
+Second demand check for each candidate: Google Trends direction for its main buyer keyword over the last 12 months (rising/flat/falling) and roughly how many advertisers run Meta Ad Library ads for similar products. Prefer rising trend + few advertisers; drop falling trends.
 Avoid anything too close to these existing products: {existing or 'none'}.
 For each candidate capture the buyer's REAL words (from reviews/questions you found): their current-state frustration, dream state and the roadblock the product removes, and do a top-player analysis of the best-selling competitor (what mechanism makes it sell, and its 1-3 star review complaints to beat).
 Give 6 candidates and pick the best by: proven demand evidence, narrowness, can be delivered well as a PDF kit plus an Excel/Google Sheets tracker, fair price, low competition.
-Return ONLY JSON: {{"candidates":[{{"idea":"","buyer":"","job":"","evidence":"what you saw that proves demand, with source names/URLs","competition":"","price_eur":0,"score":0}}],"pick":{{"idea":"","buyer":"","job":"","why":"","evidence":"","buyer_words":"","competitor_mechanism":"","complaints_to_beat":"","price_eur":0}}}}"""
+Return ONLY JSON: {{"candidates":[{{"idea":"","buyer":"","job":"","evidence":"what you saw that proves demand, with source names/URLs","trend":"rising|flat|falling","competition":"","price_eur":0,"score":0}}],"pick":{{"idea":"","buyer":"","job":"","why":"","evidence":"","buyer_words":"","competitor_mechanism":"","complaints_to_beat":"","price_eur":0}}}}"""
     for attempt in range(3):
         txt = gemini(prompt, SYSTEM, want_json=False, search=True, temp=0.6)
         m = re.search(r'\{[\s\S]*\}', txt or '')
