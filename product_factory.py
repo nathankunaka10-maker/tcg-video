@@ -24,7 +24,7 @@ NAVY, CYAN, INK, MUTE, PAPER = (11, 18, 32), (34, 211, 238), (17, 24, 39), (100,
 NICHES = {
     'A': ('Real estate business kits', 'estate agents, letting/rental agents, landlords and small property managers. Lead trackers, enquiry follow-up systems, viewing checklists, tenant onboarding, listing marketing kits, maintenance and rent trackers, commission and pipeline trackers.', 'business-and-money/real-estate'),
     'B': ('AI and small-business operations toolkits', 'solo service businesses and small agencies. Prompt packs for a specific job, client onboarding kits, SOP packs, content calendars, sales scripts and follow-up templates, AI workflow planners, pricing calculators.', 'business-and-money'),
-    'C': ('Printable planners and trackers', 'specific everyday buyers with a clear job to do (e.g. shift workers, new pet owners, small sellers, freelancers, wedding planners, students). Pinterest-friendly printable planners and trackers.', 'self-improvement'),
+    'C': ('Printable planners and trackers', 'specific everyday buyers with a clear job to do (e.g. shift workers, new pet owners, small sellers, freelancers, wedding planners, students). Pinterest-friendly printable planners and trackers. Never health, medical, symptom, medication, mental-health or diagnosis products (risky claims, and the grader rejects them).', 'self-improvement'),
 }
 
 
@@ -569,8 +569,10 @@ def make_one(niche_key, existing):
     print('pick:', pick.get('idea'), '|', pick.get('buyer'))
     spec = make_spec(pick, niche_key)
     g = grade(spec); print('grade', g.get('overall'), g.get('scores'))
-    if (g.get('overall') or 0) < 8 and g.get('fixes'):
-        spec = revise(spec, g['fixes']); g = grade(spec); print('regrade', g.get('overall'))
+    for rnd in range(2):  # most rejections are fixable gaps (missing page, field counts), so allow two revise rounds
+        if (g.get('overall') or 0) >= 8 or not g.get('fixes'): break
+        fixes = g['fixes'] + ['Every item in "included" must be a page that exists in "pages" (same name) or the .xlsx; add the missing page or delete the claim.']
+        spec = revise(spec, fixes); g = grade(spec); print('regrade', rnd + 1, g.get('overall'))
     if (g.get('overall') or 0) < 7:
         log({'status': 'rejected', 'title': spec.get('title'), 'niche': niche_key, 'score': g.get('overall'), 'note': '; '.join(g.get('fixes', [])[:5])})
         print('rejected by grader'); return None
