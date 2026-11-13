@@ -12,6 +12,10 @@ on:
         description: 'build only, do not publish'
         type: boolean
         default: false
+      backfill_samplers:
+        description: 'only make free starter samplers for existing kits'
+        type: boolean
+        default: false
   schedule:
     - cron: '17 9 * * *'
 permissions:
@@ -48,6 +52,8 @@ jobs:
         env:
           GUMROAD_TOKEN: ${{ secrets.GUMROAD_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          BACKFILL_SAMPLERS: ${{ inputs.backfill_samplers && '1' || '' }}
           COUNT: ${{ inputs.count || '2' }}
           NICHE: ${{ inputs.niche }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}

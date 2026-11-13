@@ -240,7 +240,7 @@ def build_pdf(spec, path):
     for ln in wrap(spec.get('subtitle', ''), 13, W - 2 * M)[:3]:
         c.drawString(M, y, ln); y -= 19
     c.setFillColor(col(PAPER)); c.setFont('Helvetica', 10)
-    c.drawString(M, 60, f'{BRAND}  ·  printable PDF + Excel / Google Sheets tracker')
+    c.drawString(M, 60, f"{BRAND}  ·  {spec.get('format_line', 'printable PDF + Excel / Google Sheets tracker')}")
     c.showPage(); n += 1
     # how to use
     header('How to use this kit', n); y = H - 110
@@ -408,7 +408,7 @@ def build_images(spec, pdf_path, folder):
     d.rectangle((60, 90, 140, 98), fill=CYAN)
     y = text_block(d, (60, 130), spec['title'], font(54, True), PAPER, 620, max_lines=4)
     text_block(d, (60, y + 18), spec.get('summary', ''), font(26), CYAN, 600, max_lines=3)
-    d.text((60, 650), 'PDF kit + Excel / Google Sheets tracker', font=font(22), fill=(203, 213, 225))
+    d.text((60, 650), spec.get('format_line', 'PDF kit + Excel / Google Sheets tracker'), font=font(22), fill=(203, 213, 225))
     fan(im, (720, 110, 1260, 640)); im.save(os.path.join(folder, 'cover.png')); out['cover'] = 'cover.png'
     # square thumbnail 1000
     im = Image.new('RGB', (1000, 1000), NAVY); d = ImageDraw.Draw(im)
@@ -561,6 +561,99 @@ def log(row):
         print('log failed', e)
 
 
+
+# ---------------------------------------------------------------- free starter samplers
+# Payout-free traffic engine: Gumroad lets free products go live without a payout method, and
+# every free download gives an email + follower (email is ~42% of Gumroad sales). Each kit gets a
+# free 'starter' with 2 real pages from the kit + a page showing what the full kit adds. TRW: give
+# real value first (value + trust thresholds), one clear next step, no hype.
+STORE = 'https://copygrind.gumroad.com'
+
+
+def sampler_spec(spec):
+    pages = spec.get('pages', [])
+    pick = [p for p in pages if p.get('type') == 'guide'][:1] + [p for p in pages if p.get('type') in ('checklist', 'script')][:1]
+    if len(pick) < 2: pick = (pick + [p for p in pages if p not in pick])[:2]
+    rest = [p.get('title', '') for p in pages if p not in pick]
+    full = {'type': 'guide', 'title': "What the full kit adds", 'intro': f"You have {len(pick)} of the {len(pages)} pages from the {spec['title']}. The full kit adds:",
+            'sections': [{'heading': 'More pages from the kit', 'body': 'Each of these is ready to print or fill in, written for the same buyer and the same job.', 'bullets': rest[:10]},
+                         {'heading': 'The spreadsheet', 'body': 'An .xlsx file (opens in Excel, Google Sheets or Numbers) with one tab per tracker and totals pre-built, so you can log everything digitally instead of on paper.'},
+                         {'heading': 'Where to get it', 'body': f'Find the full kit in the thecopygrind3r store: {STORE}'}]}
+    title = ('Free Starter: ' + spec['title'])[:90]
+    return {**spec, 'title': title, 'subtitle': 'Free sample: 2 real pages from the full kit', 'format_line': 'free printable PDF sample',
+            'how_to_use': ['Print the pages or fill them in on screen.', f"Start with '{pick[0].get('title', '')}' today.", 'Use the second page this week.', 'Get the full kit when you want the trackers and spreadsheet.'],
+            'included': [f"{p.get('title', '')} (full page from the kit)" for p in pick] + ['A one-page overview of the full kit'],
+            'summary': f"Free: 2 real pages from the {spec['title'][:70]}"[:140], 'pages': pick + [full]}
+
+
+def make_sampler(spec, folder, slug, niche_key, full_url=''):
+    s = sampler_spec(spec)
+    sf = os.path.join(folder, 'free'); os.makedirs(sf, exist_ok=True)
+    pdf = os.path.join(sf, slug + '-free-starter.pdf')
+    build_pdf(s, pdf); build_images(s, pdf, sf)
+    if DRY or not TOKEN: print('dry run sampler', pdf); return None
+    base = push_assets(sf, slug + '-free')
+    desc = (f"<p>Free sample from the {spec['title']}: {len(s['pages']) - 1} complete pages you can use today, no catch.</p>"
+            + '<h3>What you get</h3><ul>' + ''.join(f'<li>{x}</li>' for x in s['included']) + '</ul>'
+            + f'<p><img src="{base}included.png"></p>'
+            + f'<p>Want every page plus the Excel / Google Sheets trackers? The full kit is in the thecopygrind3r store: <a href="{STORE}">{STORE}</a></p>')
+    file_url = upload_file(pdf)
+    data = {'name': s['title'], 'description': desc, 'price': 0, 'price_currency_type': 'eur', 'custom_summary': s['summary'][:150],
+            'custom_permalink': ('free-' + slugify(spec['title']))[:40], 'files[][url]': file_url,
+            'tags[]': clean_tags(['free template'] + spec.get('tags', []))}
+    cat = pick_category(NICHES[niche_key][2])
+    if cat: data['category'] = cat
+    r = gum('/products', data)
+    if not r.get('success') and 'permalink' in str(r).lower():
+        data['custom_permalink'] = data['custom_permalink'][:34] + '-' + str(random.randint(100, 999)); r = gum('/products', data)
+    if not r.get('success') and 'category' in str(r).lower():
+        data.pop('category', None); r = gum('/products', data)
+    if not r.get('success') and 'price' in str(r).lower():
+        data['customizable_price'] = 'true'; r = gum('/products', data)
+    if not r.get('success'): raise RuntimeError('sampler create failed: ' + str(r)[:400])
+    pid = r['product']['id']; published = r['product'].get('published')
+    gum(f'/products/{pid}/covers', {'url': base + 'cover.png'}); gum(f'/products/{pid}/thumbnail', {'url': base + 'thumb.png'})
+    if not published:
+        e = gum(f'/products/{pid}/enable', method='PUT'); published = bool((e.get('product') or {}).get('published'))
+    url = r['product'].get('short_url') or r['product'].get('url')
+    print('sampler', 'published' if published else 'draft', url, r.get('warning', ''))
+    log({'status': 'published' if published else 'draft', 'title': s['title'], 'niche': niche_key, 'score': 0, 'price_eur': 0,
+         'url': url, 'product_id': pid, 'pin_image': base + 'pin.png', 'note': 'free starter sampler of ' + (full_url or spec['title']) + (' | ' + r.get('warning', '') if r.get('warning') else ''),
+         'pin_title': ('Free printable: ' + spec['title'])[:100],
+         'pin_description': (s['summary'] + '. Free download. ' + ' '.join('#' + t.replace(' ', '') for t in spec.get('tags', [])[:4]))[:480]})
+    return url
+
+
+def backfill_samplers(existing_names):
+    """Make samplers for kits built in earlier runs (spec.json from their Actions artifacts)."""
+    done = 0
+    runs = json.loads(subprocess.run(['gh', 'run', 'list', '-R', REPO, '--workflow', 'products.yml', '-L', '40', '--json', 'databaseId'], capture_output=True, text=True).stdout or '[]')
+    seen = set()
+    for run in runs:
+        d = os.path.join('arts', str(run['databaseId']))
+        subprocess.run(['gh', 'run', 'download', str(run['databaseId']), '-R', REPO, '-D', d], capture_output=True)
+        for root, _, files in os.walk(d):
+            if 'spec.json' not in files or root.endswith('free'): continue
+            j = json.load(open(os.path.join(root, 'spec.json'))); spec = j['spec']
+            ft = ('Free Starter: ' + spec['title'])[:90]
+            if spec['title'] not in existing_names or ft in existing_names or ft in seen: continue
+            if (j.get('grade') or {}).get('overall', 0) < 8: continue
+            seen.add(ft); slug = os.path.basename(root)
+            niche = guess_niche(spec)
+            try:
+                make_sampler(spec, root, slug, niche); done += 1
+            except Exception as e:
+                print('sampler FAILED', slug, e); log({'status': 'error', 'niche': niche, 'title': ft, 'note': str(e)[:400]})
+    return done
+
+
+def guess_niche(spec):
+    t = json.dumps(spec.get('audience', '') + spec.get('title', '')).lower()
+    if re.search(r'landlord|tenant|rental|property|estate|hmo|letting', t): return 'A'
+    if re.search(r'agenc|consultant|client|business|sop|coach|freelanc', t): return 'B'
+    return 'C'
+
+
 # ---------------------------------------------------------------- main
 def make_one(niche_key, existing):
     print('== niche', niche_key)
@@ -602,13 +695,17 @@ def make_one(niche_key, existing):
     if issues:
         log({'status': 'qa_failed', 'title': spec['title'], 'niche': niche_key, 'score': g.get('overall'), 'note': '; '.join(issues)}); return None
     if DRY or not TOKEN:
-        print('dry run, not publishing'); return slug
+        print('dry run, not publishing'); make_sampler(spec, folder, slug, niche_key); return slug
     base = push_assets(folder, slug)
     pid, url, published, warning = publish(spec, zpath, base, niche_key)
     print('published' if published else 'draft', url, warning)
     log({'status': 'published' if published else 'draft', 'title': spec['title'], 'niche': niche_key, 'score': g.get('overall'),
          'price_eur': spec.get('price_eur'), 'url': url, 'product_id': pid, 'pin_image': base + 'pin.png', 'note': warning,
          'pin_title': spec['title'][:100], 'pin_description': (spec.get('summary', '') + ' ' + ' '.join('#' + t.replace(' ', '') for t in spec.get('tags', [])[:4]))[:480]})
+    try:
+        make_sampler(spec, folder, slug, niche_key, url)
+    except Exception as e:
+        print('sampler FAILED', e); log({'status': 'error', 'niche': niche_key, 'title': 'Free Starter: ' + spec['title'], 'note': 'sampler: ' + str(e)[:380]})
     return slug
 
 
@@ -618,6 +715,8 @@ def main():
     if TOKEN:
         r = gum('/products', method='GET'); existing = [p['name'] for p in r.get('products', [])] if r.get('success') else []
         print('enabled drafts:', enable_drafts())
+    if os.environ.get('BACKFILL_SAMPLERS') == '1':
+        print('samplers backfilled:', backfill_samplers(set(existing))); return
     keys = list(NICHES)
     day = datetime.date.today().toordinal()
     count = int(os.environ.get('COUNT', '1'))
