@@ -563,8 +563,8 @@ def log(row):
 
 
 # ---------------------------------------------------------------- free starter samplers
-# Payout-free traffic engine: Gumroad lets free products go live without a payout method, and
-# every free download gives an email + follower (email is ~42% of Gumroad sales). Each kit gets a
+# Lead magnet: every free download gives an email + follower (NOTE: Gumroad still needs a payout
+# method to publish free products, tested 13 Nov; drafts auto-enable once payout exists) (email is ~42% of Gumroad sales). Each kit gets a
 # free 'starter' with 2 real pages from the kit + a page showing what the full kit adds. TRW: give
 # real value first (value + trust thresholds), one clear next step, no hype.
 STORE = 'https://copygrind.gumroad.com'
@@ -702,8 +702,8 @@ def make_one(niche_key, existing):
     log({'status': 'published' if published else 'draft', 'title': spec['title'], 'niche': niche_key, 'score': g.get('overall'),
          'price_eur': spec.get('price_eur'), 'url': url, 'product_id': pid, 'pin_image': base + 'pin.png', 'note': warning,
          'pin_title': spec['title'][:100], 'pin_description': (spec.get('summary', '') + ' ' + ' '.join('#' + t.replace(' ', '') for t in spec.get('tags', [])[:4]))[:480]})
-    try:
-        make_sampler(spec, folder, slug, niche_key, url)
+    try:  # Gumroad blocks even free products without a payout method (tested 13 Nov) and caps creation at 10/day, so only when live
+        if published: make_sampler(spec, folder, slug, niche_key, url)
     except Exception as e:
         print('sampler FAILED', e); log({'status': 'error', 'niche': niche_key, 'title': 'Free Starter: ' + spec['title'], 'note': 'sampler: ' + str(e)[:380]})
     return slug
