@@ -229,8 +229,9 @@ def talk_longcat(img, wav):
     return path_of(r)
 
 LTX_PROMPT = ('A {who} films a casual vertical selfie video on a phone in an apartment, talking straight to the camera while holding '
-              'a small black clip microphone just below the chin. Natural speech, natural lip movement, blinks, small head nods and tilts, '
-              'relaxed eyebrows, the free hand moves a little. Soft window daylight, realistic skin, phone camera footage.')
+              'a small black clip microphone just below the chin. The person is explaining something, calm focused expression, '
+              'clear articulation, the lips close fully on m, b and p sounds, only a brief small smile, blinks, small head nods and tilts, '
+              'the free hand moves a little. Soft window daylight, realistic skin, phone camera footage.')
 WHO = {'A': 'young woman with dark brown hair', 'B': 'young man with short light brown hair and stubble', 'C': 'young woman with curly black hair in a bun'}
 
 LTX_MAX = 3.0  # the Space's API fixes clip length at 3 s (its duration picker is UI-only), ~50 s of GPU per call
@@ -252,7 +253,8 @@ def aroll_batch(shots, clean):
     cuts, so the reset between pieces is never seen."""
     a = [(n, sh[1], sh[2]) for n, sh in enumerate(shots) if sh[0] == 'A']
     outs = {n: os.path.join(DIR, 'a%d.mp4' % n) for n, _, _ in a}
-    if all(os.path.exists(o) for o in outs.values()): return outs
+    if all(os.path.exists(o) for o in outs.values()):
+        return outs
     RUN = 0.25
     # group shots into calls of at most 10 s
     groups, cur, cur_d = [], [], 0.0
@@ -275,7 +277,14 @@ def aroll_batch(shots, clean):
         src = os.path.join(DIR, 'talk%d.mp4' % g)
         if os.path.exists(src) and dur(src) < dur(wav) - 0.3: os.remove(src)  # stale clip from a shorter request
         if not os.path.exists(src):
-            r = talk_ltx(PHOTO, wav, secs)
+            try:
+                r = talk_ltx(PHOTO, wav, secs)
+            except Exception:
+                prev = [outs[n] + '.prev.mp4' for n, _, _ in grp]
+                if all(os.path.exists(p) for p in prev):  # retake failed (quota): keep the previous take
+                    for (n, _, _), p in zip(grp, prev): os.replace(p, outs[n])
+                    print('retake failed, kept previous take for', [n for n, _, _ in grp]); os.remove(wav); continue
+                raise
             if str(r).startswith('http'): urllib.request.urlretrieve(r, src)
             else: shutil.copy(r, src)
             if dur(src) < dur(wav) - 0.3:
@@ -389,7 +398,7 @@ def captions(ws):
     ass = os.path.join(DIR, 'caps.ass')
     open(ass, 'w').write('[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n\n[V4+ Styles]\n'
         'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n'
-        'Style: Cap,Inter,78,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,5,2,2,60,60,640,1\n\n[Events]\n'
+        'Style: Cap,Inter,76,&H00FFFFFF,&H00FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,0,0,1,7,3,2,60,60,430,1\n\n[Events]\n'
         'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n' + '\n'.join(ev) + '\n')
     return ass
 
@@ -400,12 +409,12 @@ def handheld(src, s_len, seed):
     z = 1.06
     vf = ('scale=%d:%d:force_original_aspect_ratio=increase:flags=lanczos,crop=%d:%d,' % (int(W * z), int(H * z), int(W * z), int(H * z)) +
           "crop=%d:%d:x='(iw-ow)/2+14*sin(t*1.3+%.2f)+7*sin(t*3.1+%.2f)':y='(ih-oh)/2+18*sin(t*1.1+%.2f)+6*sin(t*2.7+%.2f)'," % (W, H, a, b, c, a) +
-          'unsharp=5:5:0.45,noise=alls=7:allf=t,eq=saturation=1.03:contrast=1.02,fps=%d' % FPS)
+          'unsharp=5:5:0.45,noise=alls=5:allf=t,eq=saturation=1.03:contrast=1.02,fps=%d' % FPS)
     return vf
 
 def assemble(shots, clips, brolls, voice_mic, ass):
     parts = []
-    boff = {v: {'inbox': 1.4, 'flow': 1.0, 'assistant': 1.2}.get(k, 1.0) for k, v in brolls.items()}  # skip the page header
+    boff = {v: {'inbox': 1.4, 'flow': 1.0, 'assistant': 2.4}.get(k, 1.0) for k, v in brolls.items()}  # skip the page header
     for n, sh in enumerate(shots):
         kind, s, e = sh[:3]
         p = os.path.join(DIR, 'shot%d.mp4' % n)
@@ -426,7 +435,7 @@ def assemble(shots, clips, brolls, voice_mic, ass):
     run(['-f', 'concat', '-safe', '0', '-i', lst, '-c', 'copy', joined])
     final = os.path.join(DIR, 'final.mp4')
     run(['-i', joined, '-i', voice_mic, '-vf', 'subtitles=%s:fontsdir=/usr/share/fonts' % ass, '-map', '0:v', '-map', '1:a',
-         '-c:v', 'libx264', '-crf', '19', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-r', str(FPS),
+         '-c:v', 'libx264', '-crf', '20', '-maxrate', '9M', '-bufsize', '18M', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-r', str(FPS),
          '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', final])
     for p in parts + [lst, joined]: os.remove(p)
     for f in os.listdir(DIR):
