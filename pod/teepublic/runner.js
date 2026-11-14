@@ -24,6 +24,6 @@
  document.querySelectorAll('.dd-container').forEach(dd=>{const opts=[...dd.querySelectorAll('.dd-option')]; const opt=opts.find(a=>a.innerText.trim()=='Black')||opts.find(a=>a.innerText.trim()=='Black/White'); if(opt){dd.querySelector('.dd-select').click(); opt.click();}});
  await sleep(2000);
  window.__st='publishing tags='+document.querySelectorAll('#secondary_tags .taggle_text').length;
- const pb=[...document.querySelectorAll('button[name=commit]')].find(b=>b.offsetParent&&b.innerText.trim().toUpperCase()=='PUBLISH'); pb.click();
+ const f=document.querySelector('#design_design_title').form; const h=document.createElement('input'); h.type='hidden'; h.name='commit'; h.value='publish'; f.appendChild(h); HTMLFormElement.prototype.submit.call(f); // the site's async publish handler stalls in background tabs
  }catch(e){window.__st='ERR '+e;}
 })
