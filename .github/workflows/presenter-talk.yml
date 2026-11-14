@@ -23,9 +23,9 @@ on:
         required: false
         default: 'A'
       model:
-        description: 'wan_s2v (free, no GPU quota) or longcat (ZeroGPU, more motion)'
+        description: 'ltx (LTX-2 audio-to-video, one call per 10 s), wan_s2v (Wan-AI space, often queued) or longcat (needs PRO quota)'
         required: false
-        default: 'wan_s2v'
+        default: 'ltx'
       voice:
         description: 'Gemini voice name (empty = matches presenter)'
         required: false
