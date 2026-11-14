@@ -1,0 +1,15 @@
+{
+ "ai_generated": true,
+ "ai_label_required": true,
+ "note": "Realistic AI presenter. Switch on the AI label (Meta: \"Add AI info\" / made with AI) on every Instagram and Facebook upload.",
+ "presenter": "B",
+ "model": "ltx",
+ "voice": "gemini:Achird",
+ "lines": [
+  "Most clinics miss about one in four calls when the front desk is busy.",
+  "Those callers do not leave a message. They book somewhere else.",
+  "So I set up a system that answers, asks what they need and books the slot.",
+  "Here it is handling a missed call at nine at night.",
+  "Comment LEAK and I will show you what yours is costing."
+ ]
+}

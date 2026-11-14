@@ -15,7 +15,7 @@ JOB = os.environ.get('JOB', '').strip()
 if not JOB:
     base = os.path.join(ROOT, 'jobs')
     open_jobs = sorted(j for j in (os.listdir(base) if os.path.isdir(base) else [])
-                       if not os.path.exists(os.path.join(base, j, 'final.mp4')))
+                       if not os.path.exists(os.path.join(base, j, 'meta.json')))
     JOB = open_jobs[-1] if open_jobs else time.strftime('%Y%m%d')
 DIR = os.path.join(ROOT, 'jobs', JOB)
 os.makedirs(DIR, exist_ok=True)
@@ -279,7 +279,8 @@ def aroll_batch(shots, clean):
         if not os.path.exists(src):
             try:
                 r = talk_ltx(PHOTO, wav, secs)
-            except Exception:
+            except Exception as ex:
+                print('presenter call failed:', str(ex)[:200], flush=True)
                 prev = [outs[n] + '.prev.mp4' for n, _, _ in grp]
                 if all(os.path.exists(p) for p in prev):  # retake failed (quota): keep the previous take
                     for (n, _, _), p in zip(grp, prev): os.replace(p, outs[n])
@@ -414,7 +415,7 @@ def handheld(src, s_len, seed):
 
 def assemble(shots, clips, brolls, voice_mic, ass):
     parts = []
-    boff = {v: {'inbox': 1.4, 'flow': 1.0, 'assistant': 2.4}.get(k, 1.0) for k, v in brolls.items()}  # skip the page header
+    boff = {v: {'inbox': 2.7, 'flow': 1.0, 'assistant': 2.4}.get(k, 1.0) for k, v in brolls.items()}  # skip the page header
     for n, sh in enumerate(shots):
         kind, s, e = sh[:3]
         p = os.path.join(DIR, 'shot%d.mp4' % n)
