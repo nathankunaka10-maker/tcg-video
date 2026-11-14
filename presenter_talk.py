@@ -216,13 +216,15 @@ LTX_PROMPT = ('A {who} films a casual vertical selfie video on a phone in an apa
               'relaxed eyebrows, the free hand moves a little. Soft window daylight, realistic skin, phone camera footage.')
 WHO = {'A': 'young woman with dark brown hair', 'B': 'young man with short light brown hair and stubble', 'C': 'young woman with curly black hair in a bun'}
 
+LTX_MAX = int(os.environ.get('LTX_MAX', '10'))  # seconds per call: 10 fits a free account once a day, 5 halves the ask
+
 def talk_ltx(img, wav, seconds):
     """LTX-2 distilled (Lightricks), audio-conditioned image-to-video on the free alexnasa/ltx-2-TURBO ZeroGPU Space.
     A 10 s clip asks ~98 s of xlarge GPU (billed x2), so one call fits a free account's 300 s daily quota."""
     from gradio_client import handle_file
     c = client('alexnasa/ltx-2-TURBO')
     r = c.predict(first_frame=handle_file(img), end_frame=None, prompt=LTX_PROMPT.format(who=WHO.get(CFG['presenter'], 'young person')),
-                  input_video=None, generation_mode='Image-to-Video', enhance_prompt=False, seed=random.randint(1, 99999), randomize_seed=False,
+                  duration=float(seconds), input_video=None, generation_mode='Image-to-Video', enhance_prompt=False, seed=random.randint(1, 99999), randomize_seed=False,
                   height=896, width=512, camera_lora='No LoRA', audio_path=handle_file(wav), api_name='/generate_video')
     return path_of(r)
 
@@ -238,7 +240,7 @@ def aroll_batch(shots, clean):
     groups, cur, cur_d = [], [], 0.0
     for n, s, e in a:
         d = (e - s) + RUN
-        if cur and cur_d + d > 9.9: groups.append(cur); cur, cur_d = [], 0.0
+        if cur and cur_d + d > LTX_MAX - 0.1: groups.append(cur); cur, cur_d = [], 0.0
         cur.append((n, s, e)); cur_d += d
     if cur: groups.append(cur)
     for g, grp in enumerate(groups):
@@ -251,12 +253,15 @@ def aroll_batch(shots, clean):
             fl += '[%d:a]apad=whole_dur=%.3f[p%d];' % (j, (e - s + RUN), j)
         fl += ''.join('[p%d]' % j for j in range(len(grp))) + 'concat=n=%d:v=0:a=1[a]' % len(grp)
         run(ins + ['-filter_complex', fl, '-map', '[a]', '-ar', '48000', '-ac', '1', wav])
-        secs = min(10, math.ceil(dur(wav)))
+        secs = min(LTX_MAX, math.ceil(dur(wav)))
         src = os.path.join(DIR, 'talk%d.mp4' % g)
+        if os.path.exists(src) and dur(src) < dur(wav) - 0.3: os.remove(src)  # stale clip from a shorter request
         if not os.path.exists(src):
             r = talk_ltx(PHOTO, wav, secs)
             if str(r).startswith('http'): urllib.request.urlretrieve(r, src)
             else: shutil.copy(r, src)
+            if dur(src) < dur(wav) - 0.3:
+                raise RuntimeError('talking clip %.1f s shorter than audio %.1f s' % (dur(src), dur(wav)))
         t = 0.0
         for n, s, e in grp:
             pre = min(RUN, s)
@@ -406,6 +411,8 @@ def assemble(shots, clips, brolls, voice_mic, ass):
          '-c:v', 'libx264', '-crf', '19', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-r', str(FPS),
          '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', final])
     for p in parts + [lst, joined]: os.remove(p)
+    for f in os.listdir(DIR):
+        if f.startswith('talk') and f.endswith('.mp4'): os.remove(os.path.join(DIR, f))
     json.dump({'ai_generated': True, 'ai_label_required': True,
                'note': 'Realistic AI presenter. Switch on the AI label (Meta: "Add AI info" / made with AI) on every Instagram and Facebook upload.',
                'presenter': CFG['presenter'], 'model': CFG['model'], 'voice': CFG.get('voice_engine'), 'lines': LINES},
