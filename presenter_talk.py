@@ -178,17 +178,34 @@ def plan(ws, total):
         elif k in show: kind = 'B'
         else: kind = 'B' if m[-1][0] == 'A' else 'A'
         m.append([kind, bounds[k], bounds[k + 1], 'inbox' if k in show else None])
-    # 2. nothing longer than ~4 s: split at a word gap near the middle. A face shot that is not the hook
-    #    or the CTA becomes face then screen; screen shots and hook/CTA get a punch-in / jump cut instead.
+    # 2. nothing longer than ~4 s (face shots no longer than A_MAX, what one model call can cover):
+    #    the hook becomes face then screen, the CTA becomes screen then face (always end on the face),
+    #    middle face shots become face then screen; long screen shots get a punch-in cut.
+    A_MAX = 3.0 if CFG['model'] == 'ltx' else 4.0
+    END = min(total, ws[-1]['e'] + 0.6)
+    m[-1][2] = END
     out_m = []
     for n, sh in enumerate(m):
-        parts = [sh]
-        while parts[-1][2] - parts[-1][1] > 4.0:
-            p = parts.pop(); mid = snap((p[1] + p[2]) / 2, p[1] + 1.8, p[2] - 1.8)
-            if abs(mid - p[1]) < 1.0 or abs(p[2] - mid) < 1.0: parts.append(p); break
-            second = 'B' if (p[0] == 'A' and 0 < n < len(m) - 1) else p[0]
-            parts += [[p[0], p[1], mid, p[3]], [second, mid, p[2], p[3] if second == p[0] else None]]
-        out_m += parts
+        kind, s0, e0, src = sh
+        lim = A_MAX if kind == 'A' else 4.0
+        if e0 - s0 <= lim: out_m.append(sh); continue
+        if kind == 'A' and n == len(m) - 1:
+            cut = snap(e0 - lim + 0.05, e0 - lim, e0 - 1.2)
+            if e0 - cut > lim: cut = e0 - lim
+            out_m += [['B', s0, cut, None], ['A', cut, e0, None]]
+        elif kind == 'A':
+            cut = snap(s0 + lim - 0.1, s0 + 1.2, s0 + lim)
+            out_m += [['A', s0, cut, None], ['B', cut, e0, None]]
+        else:
+            cut = snap((s0 + e0) / 2, s0 + 1.8, e0 - 1.8)
+            out_m += [[kind, s0, cut, src], [kind, cut, e0, src]]
+    # 3. tiny screen shots next to another screen shot are merged when the result stays under ~4.2 s
+    m2 = []
+    for sh in out_m:
+        if m2 and sh[0] == 'B' and m2[-1][0] == 'B' and (min(sh[2] - sh[1], m2[-1][2] - m2[-1][1]) < 1.5) and sh[2] - m2[-1][1] <= 4.2:
+            m2[-1][2] = sh[2]; m2[-1][3] = m2[-1][3] or sh[3]
+        else: m2.append(list(sh))
+    out_m = m2
     rot, r = ['flow', 'assistant'], 0
     for sh in out_m:
         if sh[0] == 'B' and not sh[3]: sh[3] = rot[r % 2]; r += 1
@@ -216,15 +233,16 @@ LTX_PROMPT = ('A {who} films a casual vertical selfie video on a phone in an apa
               'relaxed eyebrows, the free hand moves a little. Soft window daylight, realistic skin, phone camera footage.')
 WHO = {'A': 'young woman with dark brown hair', 'B': 'young man with short light brown hair and stubble', 'C': 'young woman with curly black hair in a bun'}
 
-LTX_MAX = int(os.environ.get('LTX_MAX', '10'))  # seconds per call: 10 fits a free account once a day, 5 halves the ask
+LTX_MAX = 3.0  # the Space's API fixes clip length at 3 s (its duration picker is UI-only), ~50 s of GPU per call
 
 def talk_ltx(img, wav, seconds):
     """LTX-2 distilled (Lightricks), audio-conditioned image-to-video on the free alexnasa/ltx-2-TURBO ZeroGPU Space.
-    A 10 s clip asks ~98 s of xlarge GPU (billed x2), so one call fits a free account's 300 s daily quota."""
+    Through the API every clip is 3 s (duration lives in private UI state). One call asks ~53 s of xlarge GPU,
+    so a free account (300 s/day) gets about 3 presenter shots a day; resumable runs pick up the rest."""
     from gradio_client import handle_file
     c = client('alexnasa/ltx-2-TURBO')
     r = c.predict(first_frame=handle_file(img), end_frame=None, prompt=LTX_PROMPT.format(who=WHO.get(CFG['presenter'], 'young person')),
-                  duration=float(seconds), input_video=None, generation_mode='Image-to-Video', enhance_prompt=False, seed=random.randint(1, 99999), randomize_seed=False,
+                  input_video=None, generation_mode='Image-to-Video', enhance_prompt=False, seed=random.randint(1, 99999), randomize_seed=False,
                   height=896, width=512, camera_lora='No LoRA', audio_path=handle_file(wav), api_name='/generate_video')
     return path_of(r)
 
@@ -239,8 +257,8 @@ def aroll_batch(shots, clean):
     # group shots into calls of at most 10 s
     groups, cur, cur_d = [], [], 0.0
     for n, s, e in a:
-        d = (e - s) + RUN
-        if cur and cur_d + d > LTX_MAX - 0.1: groups.append(cur); cur, cur_d = [], 0.0
+        d = (e - s) + min(RUN, s, max(0.0, LTX_MAX - (e - s)))
+        if cur and cur_d + d > LTX_MAX + 0.01: groups.append(cur); cur, cur_d = [], 0.0
         cur.append((n, s, e)); cur_d += d
     if cur: groups.append(cur)
     for g, grp in enumerate(groups):
@@ -248,12 +266,12 @@ def aroll_batch(shots, clean):
         wav = os.path.join(DIR, 'talk%d.wav' % g)
         ins, fl = [], ''
         for j, (n, s, e) in enumerate(grp):
-            pre = min(RUN, s)
+            pre = min(RUN, s, max(0.0, LTX_MAX - (e - s)))
             ins += ['-ss', '%.3f' % (s - pre), '-t', '%.3f' % (e - s + pre), '-i', clean]
-            fl += '[%d:a]apad=whole_dur=%.3f[p%d];' % (j, (e - s + RUN), j)
+            fl += '[%d:a]apad=whole_dur=%.3f[p%d];' % (j, (e - s + pre), j)
         fl += ''.join('[p%d]' % j for j in range(len(grp))) + 'concat=n=%d:v=0:a=1[a]' % len(grp)
         run(ins + ['-filter_complex', fl, '-map', '[a]', '-ar', '48000', '-ac', '1', wav])
-        secs = min(LTX_MAX, math.ceil(dur(wav)))
+        secs = LTX_MAX
         src = os.path.join(DIR, 'talk%d.mp4' % g)
         if os.path.exists(src) and dur(src) < dur(wav) - 0.3: os.remove(src)  # stale clip from a shorter request
         if not os.path.exists(src):
@@ -264,10 +282,10 @@ def aroll_batch(shots, clean):
                 raise RuntimeError('talking clip %.1f s shorter than audio %.1f s' % (dur(src), dur(wav)))
         t = 0.0
         for n, s, e in grp:
-            pre = min(RUN, s)
-            # piece j starts at t: [run-up pre][shot (e - s)][pad to RUN]
+            pre = min(RUN, s, max(0.0, LTX_MAX - (e - s)))
+            # piece starts at t: [run-up pre][shot (e - s)]
             run(['-ss', '%.3f' % (t + pre), '-i', src, '-t', '%.3f' % (e - s), '-an', '-c:v', 'libx264', '-crf', '16', '-pix_fmt', 'yuv420p', outs[n]])
-            t += (e - s) + RUN
+            t += (e - s) + pre
         os.remove(wav)
     return outs
 
