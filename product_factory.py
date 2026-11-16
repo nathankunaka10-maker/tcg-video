@@ -174,7 +174,7 @@ Top competitor's selling mechanism (beat it, don't copy the surface): {pick.get(
 Complaints in competitors' 1-3 star reviews to fix: {pick.get('complaints_to_beat')}
 Fill "wwp" FIRST, then write every listing element (title, summary, description, included, benefits) to trigger the mind steps in order, in the buyer's words. Title = buyer identity + concrete result (search-friendly, no hype). First description paragraph names their current-state pain in their words; second shows the relief and exactly how the kit delivers it; third removes the main objection.
 DEPTH (buyers judge value by how full and specific it is): guide pages have 4-6 sections, each body 4-6 sentences of concrete know-how with numbers/examples; every checklist has 3-5 groups of 5-8 items; scripts have 4-6 blocks; templates have 10-16 fields; worksheets have 8-12 prompts; trackers have 5-7 columns.
-HONESTY (trust threshold, and refunds kill Gumroad accounts): "included", "benefits" and "how_to_use" may ONLY describe pages that exist in "pages" plus "an .xlsx spreadsheet (opens in Excel, Google Sheets or Numbers) with one tab per tracker, totals pre-built". Never promise links, apps, dashboards, one-click exports, automation, videos, bonuses, legal/tax/financial guarantees or anything not in the files. Tax/legal content says to confirm with a professional.
+HONESTY (trust threshold, and refunds kill Gumroad accounts): "included", "benefits" and "how_to_use" may ONLY describe pages that exist in "pages" plus "an .xlsx spreadsheet (opens in Excel, Google Sheets or Numbers) with one tab per tracker, totals pre-built, and a Summary tab that counts entries and totals every tracker automatically". Call that tab "Summary tab", NEVER "dashboard" (the word dashboard fails QA). Never promise links, apps, dashboards, charts, one-click exports, automation, videos, bonuses, legal/tax/financial guarantees or anything not in the files. Tax/legal content says to confirm with a professional.
 Rules: 8 to 12 pages total, every page must be immediately usable by this buyer, at least 2 tracker pages (they become spreadsheet tabs), include a 'guide' page with real know-how and at least one checklist. Use realistic example rows. Price in EUR between 7 and 39 depending on value (business kits 15-39, consumer planners 7-15). Currency examples in EUR, dates as DD/MM/YYYY.
 Return ONLY JSON matching this schema:
 {SPEC_SCHEMA}"""
@@ -183,7 +183,7 @@ Return ONLY JSON matching this schema:
 
 def grade(spec):
     prompt = (TRW + "\nYou are a strict buyer and a TRW marketing professor reviewing a student's product. Score 1-10 for each: usefulness to the stated buyer, "
-              "specificity (not generic), accuracy (no false or risky claims; ANY promised feature/file/link/dashboard/export not actually present in pages = accuracy max 4), completeness (7-11 content pages; guides 4-6 sections of 4-6 sentences; checklists 15+ items; scripts 4+ blocks; templates 10+ fields; worksheets 8+ prompts; ANY miss = completeness max 5), completeness (pages actually usable), sellability at its price, "
+              "specificity (not generic), accuracy (no false or risky claims; ANY promised feature/file/link/dashboard/chart/export not actually present in pages = accuracy max 4; the .xlsx really has one tab per tracker plus a Summary tab with live entry counts and totals, so those claims are TRUE), completeness (7-11 content pages; guides 4-6 sections of 4-6 sentences; checklists 15+ items; scripts 4+ blocks; templates 10+ fields; worksheets 8+ prompts; ANY miss = completeness max 5), completeness (pages actually usable), sellability at its price, "
               "trw_copy (WWP done properly, buyer's words, leads with identity/pain, all three thresholds raised, no hype, one clear message). "
               "Then overall = the minimum of the six. List concrete fixes. Return ONLY JSON {\"scores\":{...},\"overall\":0,\"fixes\":[\"...\"]}.\n\n"
               + json.dumps(spec)[:30000])
@@ -335,7 +335,7 @@ def build_xlsx(spec, path):
         ws0.cell(row=3 + i, column=1, value=f'{i}. {s}')
     ws0.column_dimensions['A'].width = 110
     head = PatternFill('solid', fgColor='0B1220'); thin = Side(style='thin', color='D7DEE7')
-    used = set()
+    used = set(); summary = []
     for p in spec['pages']:
         if p.get('type') != 'tracker': continue
         name = re.sub(r'[\\/*?:\[\]]', '', p.get('title', 'Tracker'))[:28] or 'Tracker'
@@ -362,6 +362,25 @@ def build_xlsx(spec, path):
         if nums:
             ws.cell(row=last + 2, column=1, value='Total').font = Font(bold=True)
         ws.freeze_panes = 'A2'
+        summary.append((name, cols, nums, last))
+    # Real 'Summary' tab with live formulas, so the honest claim "a Summary tab that totals every tracker" is true
+    if summary:
+        sm = wb.create_sheet('Summary', 1)
+        sm['A1'] = 'Summary (updates automatically as you fill the trackers)'; sm['A1'].font = Font(bold=True, size=14)
+        for i, h in enumerate(['Tracker', 'Entries', 'Column', 'Total'], 1):
+            c = sm.cell(row=3, column=i, value=h); c.font = Font(bold=True, color='F8FAFC'); c.fill = head
+        r = 4
+        for name, cols, nums, last in summary:
+            q = "'" + name.replace("'", "''") + "'"
+            sm.cell(row=r, column=1, value=name).font = Font(bold=True)
+            sm.cell(row=r, column=2, value=f'=COUNTA({q}!A3:A{last})')
+            for i, h in enumerate(cols, 1):
+                if h in nums:
+                    L = ws.cell(row=1, column=i).column_letter
+                    sm.cell(row=r, column=3, value=h); c = sm.cell(row=r, column=4, value=f'=SUM({q}!{L}3:{L}{last})'); c.number_format = '€#,##0.00'
+                    r += 1
+            if not nums: r += 1
+        for col, w in (('A', 34), ('B', 10), ('C', 30), ('D', 16)): sm.column_dimensions[col].width = w
     wb.save(path)
     return len(used)
 
@@ -455,6 +474,10 @@ def qa(spec, pdf_path, xlsx_path, n_pages, n_tabs):
         if t == 'script' and len(p.get('blocks', [])) < 4: issues.append(f"script '{p.get('title')}' has <4 blocks")
         if t == 'template' and len(p.get('fields', [])) < 10: issues.append(f"template '{p.get('title')}' has <10 fields")
         if t == 'worksheet' and len(p.get('prompts', [])) < 8: issues.append(f"worksheet '{p.get('title')}' has <8 prompts")
+    for k in ('included', 'how_to_use', 'benefits', 'description', 'summary'):  # the xlsx has a real Summary tab; 'dashboard' over-promises charts
+        v = spec.get(k)
+        fx = lambda t: re.sub(r'\bdashboards?\b(?: view| tab| page)?', 'Summary tab', t, flags=re.I) if isinstance(t, str) else t
+        spec[k] = [fx(x) for x in v] if isinstance(v, list) else fx(v)
     claims = ' '.join(spec.get('included', []) + spec.get('how_to_use', []) + spec.get('benefits', []))
     bad = re.findall(r'one-click|dashboard|link (?:inside|in the|below)|automatic(?:ally)? (?:calculat|sync|import)|video|bonus|guarantee', claims, re.I)
     if bad: issues.append('promises missing features: ' + ', '.join(sorted(set(b.lower() for b in bad))))
