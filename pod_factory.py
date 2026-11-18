@@ -28,6 +28,11 @@ BLOCK = re.compile(r"\b(realtor|realtors|chatgpt|openai|gpt|claude|gemini|anthro
                    r"zillow|rightmove|zapier|n8n|notion|slack|amazon|tesla|elon|musk|nike|disney|marvel|star wars|"
                    r"pokemon|netflix|linkedin|tiktok|instagram|youtube|meta|copilot|github|python|java|stack overflow|"
                    r"keep calm|just do it|fuck|shit|bitch|damn)\b", re.I)
+# saturated slogan templates that already have thousands of listings: no differentiation, no sales (Arno: be specific, not generic)
+COMMON = re.compile(r"(i solve problems|problems i didn.?t create|i.?m not arguing|i.?m not lazy|running on coffee|powered by coffee|"
+                    r"coffee (then|first)|eat.{0,3}sleep|trust me,? i.?m|i don.?t always|it.?s not a bug|works on my machine|"
+                    r"no place like 127|i void warranties|because you broke|i paused my|nevertheless|hustle (hard|harder)|"
+                    r"boss babe|good vibes|on a mission|living my best|professional overthinker|let that sink in|just one more)", re.I)
 
 SYSTEM = ('You write original text-only t-shirt and sticker slogans for print-on-demand marketplaces. '
           'Method (TRW strategic marketing): 1) market research first: find the exact phrases, frustrations and inside jokes '
@@ -208,6 +213,7 @@ def main():
             except Exception as e:
                 print('research failed', key, e); continue
             ds = [d for d in ds if not BLOCK.search(' '.join(d['lines']) + ' ' + d.get('title', ''))
+                  and not COMMON.search(' '.join(d['lines']))
                   and '—' not in ' '.join(d['lines']) and 2 <= len(' '.join(d['lines']).split()) <= 9]
             if not ds: continue
             try:
