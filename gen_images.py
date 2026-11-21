@@ -65,7 +65,8 @@ for it in feed.get('items', []):
     if os.path.exists('%s/%s_%s.jpg' % (OUT, it['id'], it['kind'])) and os.path.exists('%s/%s_%s_bg.jpg' % (OUT, it['id'], it['kind'])): print('exists', it['id']); continue
     p = it['prompt'] + ' Photorealistic, natural light, no text, no logos, no watermark.'
     src = None
-    p += ' No faces, no portraits, no identifiable people; hands or silhouettes from behind only.'
+    # 21 Nov 2026 (Nathan): AI-made people (even from behind) read as AI slop. Backgrounds are places and objects only.
+    p += ' No people at all: no faces, hands, bodies or silhouettes. Show the place or objects only, like a real phone photo taken by the owner (desk, shop front, phone on a counter, keys, a waiting room), slightly imperfect natural light, not glossy, not cinematic.'
     for name, fn in [('klein', lambda: gen_klein(p, False, it['w'], it['h'])), ('zimage', lambda: gen_zimage(p, it['w'], it['h']))]:
         try:
             src = fn(); print('generated', it['kind'], 'with', name, flush=True); break

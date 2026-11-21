@@ -530,8 +530,10 @@ if __name__ == '__main__':
         done = False
         # 8 Nov 2026: story reels (faceless character + true behind-the-build story) on Wednesday and Sunday (UTC).
         _m = os.environ.get('MODE', '').strip().lower()
-        story_day = _m == 'story' or (_m not in ('proof', 'daily') and datetime.datetime.utcnow().weekday() in (2, 6))
-        if story_day and os.environ.get('STORY', 'on') != 'off':
+        # 21 Nov 2026 (Nathan): the AI hoodie character looked like AI slop. Story reels no longer run on their own;
+        # Wednesday and Sunday get a proof reel (real screen recording) instead. Only a manual MODE=story run makes one.
+        story_day = _m == 'story'
+        if story_day and os.environ.get('STORY', 'off') == 'on':
             try:
                 import story
                 story.render_story(d, sys.modules[__name__])

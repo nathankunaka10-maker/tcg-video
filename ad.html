@@ -36,7 +36,9 @@ let D,starts=[],END=0,ENDDUR=2.4,cur=-1;
 window.setData=o=>{D=o;let a=0;D.scenes.forEach(s=>{starts.push(a);a+=s.dur});END=a;document.getElementById('sub').textContent=D.end.sub};
 function uiHtml(s){
  const L=(s.ui_lines||[]).filter(Boolean);
+ if(s.ui==='notif'&&!L.length)return '';
  if(s.ui==='notif')return '<div class="notif" id="u"><div class="ic">✉</div><div style="flex:1"><div class="tt"><span>'+esc(s.ui_title||'New enquiry')+'</span><i>now</i></div><div class="ln">'+esc(L[0]||'')+'</div></div></div>';
+ if(s.ui==='chat'&&L.length<2)return '';
  if(s.ui==='chat')return '<div class="chat" id="u"><div class="hd">'+esc(s.ui_title||'Website chat')+'</div>'+L.map((l,i)=>{const sv=/^\s*B\s*:/i.test(l);return '<div class="b '+(sv?'s':'c')+'" id="b'+i+'">'+esc(l.replace(/^\s*[BC]\s*:\s*/i,''))+'</div>'}).join('')+'<div class="tick" id="tk">Delivered</div></div>';
  if(s.ui==='stats')return '<div class="stats" id="u">'+L.map((l,i)=>{const m=String(l).match(/^(.*?)[:\-]\s*([\d.,]+)\s*(.*)$/);return '<div class="row"><span>'+esc(m?m[1]:l)+'</span>'+(m?'<b data-v="'+m[2].replace(/,/g,'')+'" data-s="'+esc(m[3])+'">0</b>':'')+'</div>'}).join('')+'</div>';
  return '';
@@ -61,7 +63,7 @@ window.setT=t=>{
  document.getElementById('cap').style.opacity=1-R(t,a+dur-.08,a+dur);
  const u=document.getElementById('u');ui.style.opacity=1-R(t,a+dur-.08,a+dur);
  if(u){const st=a+.35,k=E(R(t,st,st+.35));u.style.transform='translateY('+(s.ui==='notif'?-260*(1-k):160*(1-k))+'px) scale('+(.96+.04*k)+')';u.style.opacity=k;
-  if(s.ui==='chat'){const bs=u.querySelectorAll('.b');const gap=Math.max(.35,(dur-1.0)/Math.max(bs.length,1));bs.forEach((b,j)=>{const kb=E(R(t,st+.3+j*gap,st+.3+j*gap+.2));b.style.opacity=kb;b.style.transform='translateY('+(30*(1-kb))+'px)'});const tk=document.getElementById('tk');if(tk)tk.style.opacity=R(t,st+.3+bs.length*gap,st+.5+bs.length*gap)}
+  if(s.ui==='chat'){const bs=u.querySelectorAll('.b');const gap=Math.min(.8,Math.max(.25,(dur-1.2)/Math.max(bs.length,1)));bs.forEach((b,j)=>{const kb=E(R(t,st+.3+j*gap,st+.3+j*gap+.2));b.style.opacity=kb;b.style.transform='translateY('+(30*(1-kb))+'px)'});const tk=document.getElementById('tk');if(tk)tk.style.opacity=R(t,st+.3+bs.length*gap,st+.5+bs.length*gap)}
   if(s.ui==='stats'){u.querySelectorAll('b[data-v]').forEach((b,j)=>{const v=parseFloat(b.dataset.v)||0;const p=E(R(t,st+.3+j*.2,st+1.3+j*.2));b.textContent=(Number.isInteger(v)?Math.round(v*p):(v*p).toFixed(1))+(b.dataset.s?' '+b.dataset.s:'')})}}
 };
 </script></body></html>

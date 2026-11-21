@@ -6,8 +6,8 @@ on:
         description: 'clips to make this run'
         required: false
         default: '4'
-  schedule:
-    - cron: '20 3 * * *'
+  # schedule removed 21 Nov 2026 (Nathan): AI character clips switched off (looked like AI slop). Manual start only.
+    # - cron: '20 3 * * *'
 permissions:
   contents: write
 jobs:
