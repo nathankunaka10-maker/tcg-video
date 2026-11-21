@@ -23,8 +23,14 @@ def pick_showcase(recent):
     order = SHOWCASES[day % len(SHOWCASES):] + SHOWCASES[:day % len(SHOWCASES)]
     return next((s for s in order if s not in used), order[0])
 
-def write_script(cfg):
+def write_script(cfg, recent=None):
     ind = cfg.get('industry') or 'estate agency'
+    used = [str(x.get('caption_l1') or '')[:80] for x in (recent or [])[-12:] if x.get('caption_l1')]
+    words = lambda t: set(re.findall(r'[a-z]+', t.lower())) - {'you','your','are','the','a','to','is','while','when','and','of','on'}
+    def fresh(h):
+        # 22 Nov 2026: reject hooks that repeat a recent one (the same reel went out twice on 17 and 19 Nov)
+        hw = words(h)
+        return all(len(hw & words(u)) < max(3, len(hw) * 0.6) for u in used)
     sample = next((s for s in cfg.get('samples', []) if s.get('urgency') == 'high'), (cfg.get('samples') or [{}])[0]) if cfg.get('samples') else {}
     facts = {'business_type': ind, 'pain': (cfg.get('pain') or {}).get('en', ''), 'example_message_subject': sample.get('subject', ''),
              'what_the_system_does': [p.get('why_en') for p in cfg.get('plan', [])][:2]}
@@ -35,28 +41,33 @@ def write_script(cfg):
               '1) a real-looking enquiry lands (say it is a demo for a ' + ind + '), 2) the system reads it and picks out what matters, '
               '3) a full reply is drafted in seconds and a person just presses approve. '
               'Rules (TRW): one message only, never say we, our or us (say I or the system), plain words a Dutch reader understands, confident and calm. Never claim clients, results, '
-              'percentages, money or time saved. No numbers. No em dashes, no emojis, no hashtags, no exclamation marks.\nFacts: ' + json.dumps(facts))
+              'percentages, money or time saved. No numbers. No em dashes, no emojis, no hashtags, no exclamation marks.\n'
+              'The hook must use a different angle and different words from these recent hooks: ' + json.dumps(used) + '\nFacts: ' + json.dumps(facts))
     payload = {'contents': [{'parts': [{'text': prompt}]}], 'generationConfig': {'temperature': 0.8, 'responseMimeType': 'application/json',
                'responseSchema': {'type': 'OBJECT', 'properties': {'hook': {'type': 'STRING'}, 'beats': {'type': 'ARRAY', 'items': {'type': 'STRING'}}}, 'required': ['hook', 'beats']}}}
-    for m in ['gemini-2.5-flash', 'gemini-3.1-flash-lite']:
+    for m in ['gemini-2.5-flash', 'gemini-3.1-flash-lite', 'groq', 'groq']:
         try:
-            req = urllib.request.Request(CHAIN, data=json.dumps({'model': m, 'payload': payload}).encode(), headers={'Content-Type': 'application/json'})
-            r = json.load(urllib.request.urlopen(req, timeout=120))
-            t = ''.join(p.get('text', '') for p in r['candidates'][0]['content']['parts'] if not p.get('thought'))
+            if m == 'groq':
+                # free Groq via the n8n router when Gemini's daily quota is used up
+                req = urllib.request.Request('https://natenathan.duckdns.org/webhook/free-llm', data=json.dumps({'prompt': prompt + '\nReturn only the JSON object.', 'json': True, 'no_gemini': True, 'max_tokens': 400, 'temperature': 0.9}).encode(), headers={'Content-Type': 'application/json', 'User-Agent': 'tcg-video'})
+                t = json.load(urllib.request.urlopen(req, timeout=120)).get('text', '')
+            else:
+                req = urllib.request.Request(CHAIN, data=json.dumps({'model': m, 'payload': payload}).encode(), headers={'Content-Type': 'application/json'})
+                r = json.load(urllib.request.urlopen(req, timeout=120))
+                t = ''.join(p.get('text', '') for p in r['candidates'][0]['content']['parts'] if not p.get('thought'))
+            t = re.sub(r'^```(?:json)?\s*|\s*```$', '', str(t).strip())
             j = json.loads(t)
             clean = lambda s: re.sub(r'\s*[\u2014\u2013]\s*', ', ', str(s)).replace('!', '.').strip()
             hook, beats = clean(j['hook']), [clean(b) for b in j['beats']][:3]
             ok = (3 <= len(hook.split()) <= 11 and '?' not in hook and re.search(r'\b(you|your)\b', hook, re.I) and len(beats) == 3
                   and all(3 <= len(b.split()) <= 16 for b in beats) and not re.search(r'[0-9%€$]', hook + ' '.join(beats)) and not re.search(r'\b(we|our|us)\b', hook + ' ' + ' '.join(beats), re.I))
-            if ok:
+            if ok and fresh(hook):
                 return hook, beats
             print('proof script rejected:', hook, beats)
         except Exception as e:
             print('proof script failed on', m, e)
-    return ('You are losing enquiries while you are busy',
-            ['Here is a demo I built for a ' + ind + '. A new enquiry just landed.',
-             'The system reads it and picks out what actually matters.',
-             'A full reply is ready in seconds. You just press approve.'])
+    # No fixed fallback any more: it made the same reel go out twice. The caller falls back to a different reel type.
+    raise RuntimeError('no fresh proof script today')
 
 OVERLAY_CSS = """
 #tcgo{position:fixed;inset:0;pointer-events:none;z-index:2147483647;font-family:Inter,'Helvetica Neue',Arial,sans-serif}
@@ -183,7 +194,7 @@ def render_proof(d, R):
     cfg = _get(CFG + slug)
     if not cfg.get('slug'):
         raise RuntimeError('showcase config missing: ' + slug)
-    hook, beats = write_script(cfg)
+    hook, beats = write_script(cfg, R.RECENT)
     segs = [hook] + beats + [CTA]
     print('proof reel:', slug, '|', hook, '|', beats)
     spoken = ' '.join(s if s[-1:] in '.!?' else s + '.' for s in segs)
