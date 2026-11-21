@@ -31,12 +31,18 @@ def write_script(cfg, recent=None):
         # 22 Nov 2026: reject hooks that repeat a recent one (the same reel went out twice on 17 and 19 Nov)
         hw = words(h)
         return all(len(hw & words(u)) < max(3, len(hw) * 0.6) for u in used)
+    # 22 Nov 2026: own stats showed hooks that held viewers were a 'stop doing X' mistake (91 views) and a late-night
+    # enquiry moment (8 to 17 s watched). Rotate these angles so reels stop repeating 'you are losing enquiries'.
+    angles = ['a blunt stop-doing-this line about a habit the viewer has, like: Stop replying to enquiries after your viewings.',
+              'a POV moment that puts the viewer in the scene, like: POV, a buyer messages you late at night.',
+              'a common belief that is wrong, like: Your website is not why buyers go quiet.']
+    angle = angles[(datetime.date.today().toordinal() // 2) % len(angles)]
     sample = next((s for s in cfg.get('samples', []) if s.get('urgency') == 'high'), (cfg.get('samples') or [{}])[0]) if cfg.get('samples') else {}
     facts = {'business_type': ind, 'pain': (cfg.get('pain') or {}).get('en', ''), 'example_message_subject': sample.get('subject', ''),
              'what_the_system_does': [p.get('why_en') for p in cfg.get('plan', [])][:2]}
     prompt = ('You write the voiceover for a 15 to 20 second faceless Instagram Reel. On screen: a screen recording of a working demo '
               'that handles incoming enquiries for an EXAMPLE ' + ind + ' (not a real client). Viewer: owners of small local businesses and estate agents.\n'
-              'Return JSON {hook, beats}. hook: max 9 words, a statement (never a question), speaks to the viewer (you/your), states the painful truth this demo fixes, never reveals the fix, like: Your enquiries go cold while you are on a viewing. '
+              'Return JSON {hook, beats}. hook: max 9 words, a statement (never a question), speaks to the viewer (you/your), states the painful truth this demo fixes, never reveals the fix. Angle for today: ' + angle + ' '
               'beats: exactly 3 short spoken lines, max 13 words each, describing what the viewer sees in order: '
               '1) a real-looking enquiry lands (say it is a demo for a ' + ind + '), 2) the system reads it and picks out what matters, '
               '3) a full reply is drafted in seconds and a person just presses approve. '
