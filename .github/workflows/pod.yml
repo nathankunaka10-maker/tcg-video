@@ -9,8 +9,8 @@ on:
         description: 'render only, do not push'
         type: boolean
         default: false
-  schedule:
-    - cron: '47 10 * * 1,4'
+  # Scheduled by n8n (workflow 04cveMOyD9BHZKpy) Mon+Thu 09:25 Amsterdam, right after the free
+  # Gemini quota resets. The old GitHub cron fired ~8h late, when the quota was drained (0 designs on 19 Nov).
 permissions:
   contents: write
 jobs:
