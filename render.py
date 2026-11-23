@@ -44,7 +44,8 @@ def ugc_pick():
 
 def use_ugc(p):
     import random
-    return os.environ.get('UGC', 'off') == 'on' and random.random() < p
+    # 23 Nov 2026 (Nathan): AI UGC / AI people are off for good, whatever the env says. Real stock footage only.
+    return False
 
 def sh(cmd):
     return subprocess.run(cmd, check=True, capture_output=True)

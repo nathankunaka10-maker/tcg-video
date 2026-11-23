@@ -65,10 +65,9 @@ for it in feed.get('items', []):
     if os.path.exists('%s/%s_%s.jpg' % (OUT, it['id'], it['kind'])) and os.path.exists('%s/%s_%s_bg.jpg' % (OUT, it['id'], it['kind'])): print('exists', it['id']); continue
     p = it['prompt'] + ' Photorealistic, natural light, no text, no logos, no watermark.'
     src = None
-    # 22 Nov 2026 (Nathan): the AI hoodie character was the problem, not people or hands. Hands typing, writing or holding a phone and
-    # ordinary-looking people are fine. No hoodie guy, no dark moody 'hacker' look, no face close-ups, nothing glossy or cinematic.
-    p += (' Real life, like an ordinary phone photo taken at the business: the place, objects, and where it fits natural hands typing, writing or holding a phone, '
-          'or ordinary people in everyday work clothes seen at normal distance. No hoodies, no dark moody hacker look, no close-up faces, not glossy, not cinematic, slightly imperfect natural light.')
+    # 23 Nov 2026 (Nathan): NO AI-generated people or hands anywhere (it all reads as AI UGC). Real footage of people (stock clips) is fine.
+    p += (' No people at all: no faces, hands, bodies or silhouettes. Show the place or objects only, like a real phone photo taken by the owner '
+          '(desk, shop front, phone on a counter, keys, a waiting room), slightly imperfect natural light, not glossy, not cinematic.')
     for name, fn in [('klein', lambda: gen_klein(p, False, it['w'], it['h'])), ('zimage', lambda: gen_zimage(p, it['w'], it['h']))]:
         try:
             src = fn(); print('generated', it['kind'], 'with', name, flush=True); break
