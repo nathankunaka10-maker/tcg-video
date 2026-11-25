@@ -32,7 +32,14 @@ BLOCK = re.compile(r"\b(realtor|realtors|chatgpt|openai|gpt|claude|gemini|anthro
 COMMON = re.compile(r"(i solve problems|problems i didn.?t create|i.?m not arguing|i.?m not lazy|running on coffee|powered by coffee|"
                     r"coffee (then|first)|eat.{0,3}sleep|trust me,? i.?m|i don.?t always|it.?s not a bug|works on my machine|"
                     r"no place like 127|i void warranties|because you broke|i paused my|nevertheless|hustle (hard|harder)|"
-                    r"boss babe|good vibes|on a mission|living my best|professional overthinker|let that sink in|just one more)", re.I)
+                    r"boss babe|good vibes|on a mission|living my best|professional overthinker|let that sink in|just one more|"
+                    r"mode:? ?(on|activated)|loading\.\.\.|level:? ?expert|ninja|i speak \w+|\w+ addict\b|small but mighty|"
+                    r"coffee|caffeine|made in my basement|client is always right)", re.I)
+
+# formats the grader kept rejecting as cliches (23 Nov run: 0 of 25 passed); told to the writer up front
+BANNED_FORMATS = ("'X Mode: On/Activated', 'Loading...', 'Level: Expert', 'X Ninja', 'I speak X', 'X Addict', anything about coffee or caffeine, "
+                  "'Small but mighty', 'Eat Sleep X Repeat', 'Trust me I'm a X', 'It's not a bug', 'Works on my machine', 'Made in my basement', "
+                  "'The client is always right', job title + 'Approved!', job title + 'On Call 24/7'")
 
 SYSTEM = ('You write original text-only t-shirt and sticker slogans for print-on-demand marketplaces. '
           'Method (TRW strategic marketing): 1) market research first: find the exact phrases, frustrations and inside jokes '
@@ -46,12 +53,15 @@ SYSTEM = ('You write original text-only t-shirt and sticker slogans for print-on
 def research(niche, desc, n):
     prompt = f"""Niche: {desc}.
 Use Google Search to study what text-based shirts and stickers sell for this buyer on Redbubble, TeePublic and Amazon Merch, and the
-phrases these people actually use about their work (Reddit, forums, comments). Then invent {n} ORIGINAL slogans.
+phrases these people actually use about their work (Reddit, forums, comments). Step 1: collect concrete, lived moments from their
+own posts (the exact thing that happens to them, e.g. a tenant text at 23:00, a workflow that breaks only in production, a client who
+wants 'one small change' after sign-off). Step 2: write {n} ORIGINAL slogans, each anchored in ONE of those moments, so the buyer thinks
+'that is literally my Tuesday'. Banned formats (instant fail, already thousands of listings): {BANNED_FORMATS}.
 Rules: 2-8 words total, split into 1-4 short lines for stacking. Funny or proud, instantly understood by the buyer, a little obscure to
 outsiders is good. Each must work as a gift (coworker, birthday, new job). No brand or product names at all.
 Return JSON only:
 {{"designs":[{{"lines":["LINE 1","LINE 2"],"accent_line":0,"style":"stack|terminal|badge","buyer":"who buys it","why":"why this buyer
-laughs or feels proud, in their words","title":"marketplace title, 40-60 chars, buyer words first, e.g. Funny Property Manager Gift ...",
+laughs or feels proud, in their words","moment":"the real moment or phrase from their posts it comes from","title":"marketplace title, 40-60 chars, buyer words first, e.g. Funny Property Manager Gift ...",
 "tags":["15 tags, each 2-4 words, buyer-intent, e.g. landlord gift, property manager shirt"],"description":"2 sentences, plain, who it is
 for and the occasion"}}]}}
 style guide: terminal = reads like a command or code line (tech only); badge = short proud identity line; stack = everything else."""
@@ -72,6 +82,17 @@ person, character, quote, profanity, or that insults a group. Return JSON only:
 Slogans:\n""" + '\n'.join(f"{i}: {' / '.join(d.get('lines', []))}" for i, d in enumerate(designs))
     r = gemini(prompt, 'Independent reviewer. Honest and strict.', temp=0.2)
     return {s.get('i'): s for s in r.get('scores', [])}
+
+
+def revise(items, niche_desc):
+    """Winner's Writing Process draft 2: rewrite near-misses using the reviewer's note."""
+    prompt = f"""Niche: {niche_desc}. These slogans were near-misses with a strict buyer-reviewer. For each, keep the real moment
+behind it but rewrite it so it is sharper, more specific and more original, 2-8 words, 1-4 short lines. Banned formats: {BANNED_FORMATS}.
+No brands, people, quotes, profanity, em dashes. Return JSON only, same fields as input, one object per input, in order:
+{{"designs":[{{"lines":[],"accent_line":0,"style":"stack|terminal|badge","buyer":"","why":"","moment":"","title":"","tags":[],"description":""}}]}}
+Input:\n""" + json.dumps([dict(d, reviewer_note=n) for d, n in items])[:14000]
+    r = gemini(prompt, SYSTEM, temp=0.7)
+    return [d for d in r.get('designs', []) if d.get('lines')]
 
 
 # ---------------------------------------------------------------- render
@@ -220,12 +241,25 @@ def main():
                 sc = grade(ds, desc)
             except Exception as e:
                 print('grade failed', e); continue
-            for i, d in enumerate(ds):
-                s = sc.get(i, {})
-                print(key, s.get('score'), s.get('risk'), ' / '.join(d['lines']), '|', s.get('note'))
-                if (s.get('score') or 0) >= 8 and s.get('risk', 'none') == 'none':
-                    if key != 'tech_ai' and d.get('style') == 'terminal': d['style'] = 'stack'
-                    d.update(niche=key, score=s.get('score')); picked.append(d)
+            near = []
+            for rnd in range(2):
+                for i, d in enumerate(ds):
+                    s = sc.get(i, {})
+                    print(key, f'r{rnd}', s.get('score'), s.get('risk'), ' / '.join(d['lines']), '|', s.get('note'))
+                    if (s.get('score') or 0) >= 8 and s.get('risk', 'none') == 'none':
+                        if key != 'tech_ai' and d.get('style') == 'terminal': d['style'] = 'stack'
+                        d.update(niche=key, score=s.get('score')); picked.append(d)
+                    elif rnd == 0 and (s.get('score') or 0) >= 4 and s.get('risk', 'none') in ('none', 'common'):
+                        near.append((d, s.get('note', '')))
+                if rnd == 1 or not near: break
+                try:
+                    ds = [d for d in revise(near[:8], desc) if not BLOCK.search(' '.join(d['lines']) + ' ' + d.get('title', ''))
+                          and not COMMON.search(' '.join(d['lines'])) and '—' not in ' '.join(d['lines'])
+                          and 2 <= len(' '.join(d['lines']).split()) <= 9]
+                    if not ds: break
+                    sc = grade(ds, desc)
+                except Exception as e:
+                    print('revise failed', e); break
         picked = picked[:count]
     rows, previews = [], []
     for n, d in enumerate(picked):
